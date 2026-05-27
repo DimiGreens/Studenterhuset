@@ -29,7 +29,11 @@ const modules = [Navigation, Pagination, Autoplay]
         <Swiper
         @swiper="onSwiper"
         :modules="modules"
-        :slides-per-view="1.5"
+        :slides-per-view="1"
+        :breakpoints="{
+            992: { slidesPerView: 1.5 },
+            1510: { slidesPerView: 2 }
+        }"
         :centered-slides="true"
         :space-between="20"
         :loop="true"
@@ -38,7 +42,9 @@ const modules = [Navigation, Pagination, Autoplay]
         >
             <SwiperSlide v-for="slide in slides" :key="slide.id">
                 <img :src="slide.image" :alt="slide.title" />
-                <button class="slider_button glass">Test</button>
+                <NuxtLink to="/concerts" class="slider_button glass">
+                    Opdag koncerter <FontAwesomeIcon :icon="faAngleRight" />
+                </NuxtLink>
             </SwiperSlide>
         </Swiper>
 
@@ -60,12 +66,14 @@ const modules = [Navigation, Pagination, Autoplay]
 <style scoped>
 .swiper{
     width: 100%;
-    height: 400px;
+    height: 250px;
     min-width: 0;
+    margin: 15px 0;
 }
 
 .slider_wrapper{
     position: relative;
+    overflow-x: hidden;
 }
 
 .nav-prev, .nav-next {
@@ -80,19 +88,19 @@ const modules = [Navigation, Pagination, Autoplay]
     z-index: 99;
     position: absolute;
     top: 50%;
-    left: 50px;
+    left: 15px;
 }
 
 .next_button_wrapper{
     z-index: 99;
     position: absolute;
     top: 50%;
-    right: 50px;
+    right: 15px;
 }
 
 img {
     width: 100%;
-    height: 615px;
+    height: 250px;
     object-fit: cover;
 }
 
@@ -102,14 +110,20 @@ img {
 
 .slider_button {
     position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
     bottom: 20px;
-    right: 20px;
+    right: 40px;
     z-index: 999;
-    width: 100px;
+    width: fit-content;
+    padding: 0 15px;
     height: 60px;
     font-size: 24px;
     color: white;
     cursor: pointer;
+    text-decoration: none;
 }
 
 :deep(.swiper-pagination-bullet) {
@@ -122,4 +136,21 @@ img {
     opacity: 1;
 }
 
+@media screen and (min-width: 992px){
+    .swiper{
+        height: 400px;
+    }
+    img{
+        height: 400px;
+    }
+}
+
+@media screen and (min-width: 1510px){
+    .swiper{
+        height: 400px;
+    }
+    img{
+        height: 400px;
+    }
+}
 </style>

@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
-import { faAngleDown, faAngleRight } from '@fortawesome/free-solid-svg-icons'
+import { faAngleDown, faAngleRight, faAngleLeft, faExpand, faXmark } from '@fortawesome/free-solid-svg-icons'
 
 const props = defineProps({
     concert: {
@@ -14,6 +14,21 @@ const openId = ref(null)
 const contentRefs = ref({})
 const selectedGenre = ref('all')
 const selectedConcert = ref(null)
+
+const sliderConcert = ref(null)
+const sliderIndex = ref(0)
+
+const openSlider = (item, startIndex = 0) => {
+    sliderConcert.value = {
+        ...item,
+        bandImages: [item.bandImage, ...item.bandImages]
+    }
+    sliderIndex.value = startIndex
+}
+
+const closeSlider = () => sliderConcert.value = null
+const prevSlide = () => sliderIndex.value = (sliderIndex.value - 1 + sliderConcert.value.bandImages.length) % sliderConcert.value.bandImages.length
+const nextSlide = () => sliderIndex.value = (sliderIndex.value + 1) % sliderConcert.value.bandImages.length
 
 const toggle = (id) => {
     openId.value = openId.value === id ? null : id
@@ -174,7 +189,8 @@ const otherConcerts = computed(() =>
                 <div class="modal_container">
                     <div class="modal">
                         <div class="image_wrapper">
-                            <button class="modal_close glass" @click="closeModal">✕</button>
+                            <button class="modal_close glass" @click="closeModal"><FontAwesomeIcon :icon="faXmark" /></button>
+                            <button class="modal_band-gallery glass" @click.stop="openSlider(selectedConcert, 0)"><FontAwesomeIcon :icon="faExpand" /></button>
                             <img :src="selectedConcert.bandImage" alt="" class="modal_image" />
                         </div>
                         <div class="opened_modal_bandbox">
@@ -216,19 +232,54 @@ const otherConcerts = computed(() =>
             </div>
         </Transition>
 </Teleport>
+
+<Teleport to="body">
+  <Transition name="modal">
+    <div v-if="sliderConcert" class="modal_backdrop" @click.self="closeSlider">
+      <div class="slider_container">
+
+        <button class="modal_close glass" @click="closeSlider"><FontAwesomeIcon :icon="faXmark" /></button>
+
+        <button class="slider_arrow left glass" @click="prevSlide"><FontAwesomeIcon :icon="faAngleLeft" /></button>
+
+        <img
+          :src="sliderConcert.bandImages[sliderIndex]" 
+          class="slider_image"
+        />
+
+        <button class="slider_arrow right glass" @click="nextSlide"><FontAwesomeIcon :icon="faAngleRight" /></button>
+
+        <div class="slider_dots">
+          <span
+            v-for="(_, i) in sliderConcert.bandImages"
+            :key="i"
+            :class="['dot', { active: i === sliderIndex }]"
+            @click="sliderIndex = i"
+          />
+        </div>
+
+      </div>
+    </div>
+  </Transition>
+</Teleport>
 </div>
 
 </template>
 
 <style scoped>
+.age-section{
+    margin-bottom: 30px;
+}
+
 #genre_selector{
     color: white;
     width: 150px;
     font-size: 24px;
+    margin-top: 30px;
 }
 
 .concert{
-    margin: 30px 0;
+    margin-bottom: 30px;
     cursor: pointer;
     overflow: hidden;
     transition: transform 0.3s ease;
@@ -437,7 +488,66 @@ const otherConcerts = computed(() =>
 .modal-enter-from, .modal-leave-to { opacity: 0; transform: scale(0.95); }
 .modal-enter-active, .modal-leave-active { transition: all 0.2s ease; }
 
+.slider_container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+}
+
+.slider_image {
+    max-height: 90vh;
+    max-width: 90vw;
+    object-fit: contain;
+}
+
+.slider_arrow {
+    color: white;
+    font-size: 18px;
+    width: 50px;
+    height: 50px;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.slider_dots {
+    position: absolute;
+    bottom: -30px;
+    display: flex;
+    gap: 8px;
+}
+
+.dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.4);
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.dot.active {
+    background: white;
+}
+
+.modal_band-gallery{
+    position: absolute;
+    bottom: 15px;
+    right: 15px;
+    width: 40px;
+    height: 40px;
+    color: white;
+    font-size: 18px;
+    cursor: pointer;
+    z-index: 10;
+}
+
 @media screen and (min-width: 992px){
+    #genre_selector{
+        margin-left: 100px;
+    }
+
     .concert_wrapper{
         margin-inline: 100px;
         display: grid;
@@ -447,6 +557,10 @@ const otherConcerts = computed(() =>
 }
 
 @media screen and (min-width: 1510px){
+    #genre_selector{
+        margin-left: 150px;
+    }
+
     .concert_wrapper{
         margin-inline: 150px;
         display: grid;

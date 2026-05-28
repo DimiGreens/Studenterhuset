@@ -1,38 +1,63 @@
 <script setup>
-    import { ref } from 'vue';
-    import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
-    import { faAngleDown } from '@fortawesome/free-solid-svg-icons'
+// Vi importere nødvendige ikoner samt ref fra Vue
+import { ref } from "vue";
+import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
+import { faAngleDown } from "@fortawesome/free-solid-svg-icons";
 
-    const props = defineProps({
-        accordion: {
-            type: Array,
-            required: true
-        }
-    })
+// Definerer de props, som accordion-komponenten modtager
+const props = defineProps({
+  accordion: {
+    type: Array,
+    required: true,
+  },
+});
 
-    const openId = ref(null)
+// Reaktiv variabel der holder styr på hvilket accordion-element der er åbent
+const openId = ref(null);
 
-    const toggle = (id) => {
-        openId.value = openId.value === id ? null : id
-    }
+// Funktion der toggler åbning/lukning af et accordion-element via dets id
+const toggle = (id) => {
+  openId.value = openId.value === id ? null : id;
+};
 
-    const contentRefs = ref({})
+// Indeholder referencer til accordion-elementernes indhold
+const contentRefs = ref({});
 </script>
 
 <template>
-<div class="accordion_wrapper">
-    <div v-for="(item, index) in accordion" :key="item.id" :class="['accordion_item', { first: index === 0 }]">
-        <button class="accordion_title" @click="toggle(item.id)">
-            {{ item.accordionTitle }}
-            <FontAwesomeIcon :icon="faAngleDown" :class="{ rotated: openId === item.id }" />
-        </button>
-        <div :ref="el => { if(el) contentRefs[item.id] = el }" 
-             :style="openId === item.id ? { maxHeight: contentRefs[item.id]?.scrollHeight + 'px', paddingBottom: '20px' } : { maxHeight: '0px' }"
-             class="accordion_content">
-            {{ item.accordionContent }}
-        </div>
+  <div class="accordion_wrapper">
+    <div
+      v-for="(item, index) in accordion"
+      :key="item.id"
+      :class="['accordion_item', { first: index === 0 }]"
+    >
+      <button class="accordion_title" @click="toggle(item.id)">
+        {{ item.accordionTitle }}
+        <FontAwesomeIcon
+          :icon="faAngleDown"
+          :class="{ rotated: openId === item.id }"
+        />
+      </button>
+      <div
+        :ref="
+          (el) => {
+            if (el) contentRefs[item.id] = el;
+          }
+        "
+        :style="
+          openId === item.id
+            ? {
+                maxHeight: contentRefs[item.id]?.scrollHeight + 'px',
+                paddingBottom: '20px',
+              }
+            : { maxHeight: '0px' }
+        "
+        class="accordion_content"
+      >
+        {{ item.accordionContent }}
+      </div>
     </div>
-</div>
+  </div>
 </template>
 
 <style scoped>
@@ -51,14 +76,14 @@
   transition: max-height 0.3s ease;
 }
 
-.accordion_title{
-    font-size: 24px;
-    width: 100%;
-    background-color: transparent;
-    border: none;
-    padding: 15px 0;
-    display: flex;
-    justify-content: space-between;
+.accordion_title {
+  font-size: 24px;
+  width: 100%;
+  background-color: transparent;
+  border: none;
+  padding: 15px 0;
+  display: flex;
+  justify-content: space-between;
 }
 
 svg {

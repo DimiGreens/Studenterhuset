@@ -144,7 +144,7 @@ onUnmounted(() => {
   transform: translateX(0);
 }
 
-@media screen and (min-width: 992px) {
+@media screen and (min-width: 993px) {
   .burgermenu {
     display: none;
   }
@@ -179,6 +179,23 @@ onUnmounted(() => {
       margin: 15px;
       color: white;
     }
+  }
+}
+
+@media screen and (min-width: 992px) and (max-width: 1500px) {
+  .site_navigation a {
+    font-size: 24px;
+    padding: 8px;
+    margin: 5px;
+  }
+
+  .navigation {
+    padding-inline: 20px;
+  }
+
+  .home img {
+    height: 30px;
+    width: auto;
   }
 }
 </style>

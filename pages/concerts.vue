@@ -137,7 +137,7 @@ const myConcert = [
 </script>
 <template>
   <div class="hero full-bleed">
-    <img src="../assets/images/Studenterhuset_koncert.JPG" alt="" />
+    <img src="../assets/images/Studenterhuset_koncert.jpg" alt="" />
   </div>
 
   <div class="container container--md mt-4 mb-3">

@@ -1,7 +1,7 @@
 <script setup></script>
 <template>
     <div class="hero_image">
-      <img src="../assets/images/Studenterhuset_begivenheder.JPG" alt="">
+      <img src="../assets/images/Studenterhuset_begivenheder.jpg" alt="">
     </div>
 </template>
 <style scoped>

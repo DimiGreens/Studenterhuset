@@ -65,4 +65,10 @@ const navigationOptions = computed(() => ({
   </div>
 </template>
 
-<style scoped></style>
+<style scoped>
+.swiper-slide-prev{
+  .slider__cta{
+    display: none;
+  }
+}
+</style>

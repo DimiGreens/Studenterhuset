@@ -217,7 +217,7 @@ const resetFilters = () => {
           <iframe
             :src="`https://open.spotify.com/embed/track/${item.spotifyEmbed}`"
             width="100%"
-            height="152"
+            height="200"
             frameborder="0"
             loading="lazy"
             allow="autoplay; clipboard-write; encrypted-media"

@@ -5,8 +5,6 @@ const props = defineProps({
     required: true,
   },
 });
-
-console.log(props.Administration);
 </script>
 <template>
   <h2>Administration</h2>

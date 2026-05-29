@@ -5,8 +5,6 @@ const props = defineProps({
     required: true,
   },
 });
-
-console.log(props.mySponser);
 </script>
 <template>
   <div class="sponsers mt-2">

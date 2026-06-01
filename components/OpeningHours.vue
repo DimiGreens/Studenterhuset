@@ -1,10 +1,19 @@
 <script setup>
-defineProps({
-  openingHours: {
-    type: Array,
-    required: true,
+const { data } = await useFetch("/api/contentful", {
+  query: {
+    contentType: "bningstider",
   },
 });
+
+const openingHours =
+  data.value?.items
+    ?.map((item) => ({
+      day: item.fields.dag,
+      opening: item.fields.aabningstid,
+      closing: item.fields.lukketid,
+      order: item.fields.rkkeflge,
+    }))
+    .sort((a, b) => a.order - b.order) ?? [];
 </script>
 
 <template>

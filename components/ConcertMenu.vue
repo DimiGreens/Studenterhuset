@@ -1,5 +1,4 @@
 <script setup>
-// Importerer nødvendige ikoner samt Vue-funktioner
 import { ref, computed, onMounted, onUnmounted } from "vue";
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 import {
@@ -13,64 +12,88 @@ import {
 import flatpickr from "flatpickr";
 import "flatpickr/dist/flatpickr.min.css";
 
-const dateInput = ref(null);
-const selectedDate = ref(null);
+const formatDate = (iso) => {
+  if (!iso) return "";
+  const d = new Date(iso);
+  return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
+};
 
-// Definerer de props, som ConcertMenu-komponenten modtager
-const props = defineProps({
-  concert: {
-    type: Array,
-    required: true,
-  },
+const formatTime = (iso) => {
+  if (!iso) return "";
+  const d = new Date(iso);
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+};
+
+// Content fra Contentful
+const { data: rawData, pending } = await useFetch("/api/contentful", {
+  query: { contentType: "koncerter", include: 3 },
+  fresh: true,
 });
 
-// Reaktive variabler der styrer visningen i grænsefladen,
-// herunder hvilket koncertkort der er åbent,
-// hvilken genre brugeren har valgt osv.
+const concerts = computed(
+  () =>
+    rawData.value?.items?.map((entry) => {
+      const f = entry.fields;
+      const artist = f.hovedact?.fields;
+
+      return {
+        id: entry.sys.id,
+        bandName: artist?.navn ?? f.titel,
+        bandImage: artist?.billede?.fields?.file?.url
+          ? "https:" + artist.billede.fields.file.url
+          : null,
+        bandImages:
+          artist?.galleri?.map((img) => "https:" + img.fields.file.url) ?? [],
+        bandDescription: artist?.beskrivelse ?? "",
+        spotifyEmbed: f.spotifyLinkTilKoncertRelevantMusik ?? "",
+        genre: Array.isArray(f.genre) ? f.genre[0] : f.genre,
+        date: formatDate(f.datoOgKoncertStart),
+        concertStart: formatTime(f.datoOgKoncertStart),
+        doorsOpen: formatTime(f.doereneAabner),
+        venue: f.sal ?? "",
+        price: f.pris ?? 0,
+        ticketLink: f.billetLink ?? "",
+      };
+    }) ?? [],
+);
+
+const dateInput = ref(null);
+const selectedDate = ref(null);
 const openId = ref(null);
 const contentRefs = ref({});
 const selectedGenre = ref("all");
 const selectedConcert = ref(null);
-
-// Reaktive variabler der holder styr på billedslideren
 const sliderConcert = ref(null);
 const sliderIndex = ref(0);
+const windowWidth = ref(
+  typeof window !== "undefined" ? window.innerWidth : 1024,
+);
 
-// Åbner slideren og vælger hvilket billede der skal vises først
 const openSlider = (item, startIndex = 0) => {
   sliderConcert.value = {
     ...item,
-    // Tilføjer bandets hero-billede som første billede i slideren
     bandImages: [item.bandImage, ...item.bandImages],
   };
   sliderIndex.value = startIndex;
 };
-
-// Luk billedslideren
 const closeSlider = () => (sliderConcert.value = null);
-
-// Går til forrige billede i slideren
 const prevSlide = () =>
   (sliderIndex.value =
     (sliderIndex.value - 1 + sliderConcert.value.bandImages.length) %
     sliderConcert.value.bandImages.length);
-
-// Går til næste billede i slideren
 const nextSlide = () =>
   (sliderIndex.value =
     (sliderIndex.value + 1) % sliderConcert.value.bandImages.length);
 
-// Åbner eller lukker et modal-element ud fra dets id
 const toggle = (id) => {
   openId.value = openId.value === id ? null : id;
 };
 
-// Filtrerer koncertlisten ud fra den valgte genre
 const filteredConcert = computed(() => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  let result = props.concert.filter((item) => {
+  let result = concerts.value.filter((item) => {
     const [day, month, year] = item.date.split("/");
     const concertDate = new Date(year, month - 1, day);
     return concertDate >= today;
@@ -87,12 +110,6 @@ const filteredConcert = computed(() => {
   return result;
 });
 
-// Holder styr på brugerens skærmbredde
-const windowWidth = ref(
-  typeof window !== "undefined" ? window.innerWidth : 1024,
-);
-
-// Opdaterer skærmbredden når vinduet ændrer størrelse
 const onResize = () => (windowWidth.value = window.innerWidth);
 onMounted(() => window.addEventListener("resize", onResize));
 onUnmounted(() => {
@@ -100,26 +117,22 @@ onUnmounted(() => {
   document.body.style.overflow = "";
 });
 
-// Returnerer true hvis brugeren er på desktop
 const isDesktop = computed(() => windowWidth.value > 992);
 
-// Funktioner til at åbne og lukke modal-vinduet
 const openModal = (item) => {
   selectedConcert.value = item;
   document.body.style.overflow = "hidden";
 };
-
 const closeModal = () => {
   selectedConcert.value = null;
   document.body.style.overflow = "";
 };
 
-// Indeholder alle andre koncerter end den valgte koncert
 const otherConcerts = computed(() => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  return props.concert.filter((item) => {
+  return concerts.value.filter((item) => {
     if (item.id === selectedConcert.value?.id) return false;
     if (item.genre !== selectedConcert.value?.genre) return false;
 
@@ -167,6 +180,8 @@ const resetFilters = () => {
         Nulstil filtre
       </button>
     </div>
+
+    <div class="pending">Henter koncerter</div>
 
     <div v-if="!isDesktop" class="concert_wrapper">
       <div v-for="item in filteredConcert" :key="item.id" class="concert">

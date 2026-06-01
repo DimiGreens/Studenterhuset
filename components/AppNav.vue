@@ -162,7 +162,7 @@ onUnmounted(() => {
     transition: height 0.3s ease;
     position: fixed; /* ← was sticky */
     top: 0;
-    z-index: 9999;
+    z-index: 100;
     margin: 15px;
     width: calc(100% - 30px); /* ← add this */
   }

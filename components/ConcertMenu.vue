@@ -343,7 +343,7 @@ const resetFilters = () => {
                       {{ selectedConcert.bandDescription }}
                     </p>
                     <iframe
-                      :src="`https://open.spotify.com/embed/track/${selectedConcert.spotifyEmbed}`"
+                      :src="`https://open.spotify.com/embed/album/${selectedConcert.spotifyEmbed}`"
                       width="100%"
                       height="152"
                       frameborder="0"

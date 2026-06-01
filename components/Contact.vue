@@ -1,10 +1,20 @@
 <script setup>
-const props = defineProps({
-  Contact: {
-    type: Array,
-    required: true,
-  },
+const { data } = await useFetch("/api/contentful", {
+  query: { contentType: "kontakt", include: 1 },
+  fresh: true,
 });
+
+const Contact = computed(
+  () =>
+    data.value?.items
+      ?.map((entry) => ({
+        text: entry.fields.tekst,
+        phone: entry.fields.telefonnummer,
+        mail: entry.fields.email,
+        order: entry.fields.rkkeflge,
+      }))
+      .sort((a, b) => a.order - b.order) ?? [],
+);
 </script>
 <template>
   <h2>Kontakt</h2>

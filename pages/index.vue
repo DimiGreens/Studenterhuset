@@ -67,7 +67,7 @@ const mySlidesEvent = [
 
 <template>
   <div class="hero full-bleed">
-    <img src="../assets/images/Studenterhuset_forside.JPG" alt="" />
+    <img src="../assets/images/Studenterhuset_forside.jpg" alt="" />
   </div>
   <div class="container container--md mt-4">
     <img src="../assets/images/Studenterhuset_logo_sort.jpg" alt="" />

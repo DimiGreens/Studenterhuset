@@ -34,11 +34,9 @@ console.log(begivenheder);
 </script>
 
 <template>
-  <div class="hero_image">
-    <img src="../assets/images/Studenterhuset_begivenheder.JPG" alt="" />
-  </div>
-
-  <EventMenu :begivenheder="begivenheder" />
+    <div class="hero_image">
+      <img src="../assets/images/Studenterhuset_begivenheder.jpg" alt="">
+    </div>
 </template>
 <style scoped>
 .hero_image {

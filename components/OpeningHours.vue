@@ -1,20 +1,19 @@
 <script setup>
 const { data } = await useFetch("/api/contentful", {
-  query: { contentType: "bningstider", include: 1 },
-  fresh: true,
+  query: {
+    contentType: "bningstider",
+  },
 });
 
-const openingHours = computed(
-  () =>
-    data.value?.items
-      ?.map((entry) => ({
-        day: entry.fields.dag,
-        opening: entry.fields.aabningstid,
-        closing: entry.fields.lukketid,
-        order: entry.fields.rkkeflge,
-      }))
-      .sort((a, b) => a.order - b.order) ?? [],
-);
+const openingHours =
+  data.value?.items
+    ?.map((item) => ({
+      day: item.fields.dag,
+      opening: item.fields.aabningstid,
+      closing: item.fields.lukketid,
+      order: item.fields.rkkeflge,
+    }))
+    .sort((a, b) => a.order - b.order) ?? [];
 </script>
 
 <template>

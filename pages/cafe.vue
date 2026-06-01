@@ -153,7 +153,7 @@ const openingHours = [
 <template>
   <body>
     <div class="hero full-bleed">
-      <img src="../assets/images/Studenterhuset_bar.JPG" alt="" />
+      <img src="../assets/images/Studenterhuset_bar.jpg" alt="" />
     </div>
     <div class="container container--md">
       <h1>Caféen</h1>

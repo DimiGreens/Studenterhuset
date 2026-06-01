@@ -3,14 +3,20 @@
 import { ref } from "vue";
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 import { faAngleDown } from "@fortawesome/free-solid-svg-icons";
+import { documentToHtmlString } from "@contentful/rich-text-html-renderer";
 
-// Definerer de props, som accordion-komponenten modtager
-const props = defineProps({
-  accordion: {
-    type: Array,
-    required: true,
-  },
+const { data } = await useFetch("/api/contentful", {
+  query: { contentType: "faq", include: 1 },
+  fresh: true,
 });
+
+const accordion = computed(() =>
+  data.value?.items?.map((entry) => ({
+    id: entry.sys.id,
+    accordionTitle: entry.fields.titel,
+    accordionContent: documentToHtmlString(entry.fields.indhold),
+  })),
+);
 
 // Reaktiv variabel der holder styr på hvilket accordion-element der er åbent
 const openId = ref(null);
@@ -53,9 +59,8 @@ const contentRefs = ref({});
             : { maxHeight: '0px' }
         "
         class="accordion_content"
-      >
-        {{ item.accordionContent }}
-      </div>
+        v-html="item.accordionContent"
+      ></div>
     </div>
   </div>
 </template>

@@ -135,55 +135,58 @@
 //   },
 // ];
 
-const { data } = await useFetch('/api/contentful', {
-  query: { contentType: 'koncerter', include: 3 },
-  fresh: true
-})
+const { data } = await useFetch("/api/contentful", {
+  query: { contentType: "koncerter", include: 3 },
+  fresh: true,
+});
 
-const allEntries = data.value.includes?.Entry ?? []
-const allAssets = data.value.includes?.Asset ?? []
+const allEntries = data.value.includes?.Entry ?? [];
+const allAssets = data.value.includes?.Asset ?? [];
 
 const extractSpotifyId = (url) => {
-  if (!url) return null
-  const parts = url.split('/')
-  return parts[parts.length - 1].split('?')[0]
-}
+  if (!url) return null;
+  const parts = url.split("/");
+  return parts[parts.length - 1].split("?")[0];
+};
 
 const resolveAsset = (assetLink) => {
-  if (!assetLink?.sys?.id) return null
-  const asset = allAssets.find(a => a.sys.id === assetLink.sys.id)
-  return asset ? 'https:' + asset.fields.file.url : null
-}
+  if (!assetLink?.sys?.id) return null;
+  const asset = allAssets.find((a) => a.sys.id === assetLink.sys.id);
+  return asset ? "https:" + asset.fields.file.url : null;
+};
 
 const resolveArtist = (artistLink) => {
-  if (!artistLink?.sys?.id) return null
-  const artist = allEntries.find(e => e.sys.id === artistLink.sys.id)
-  if (!artist) return null
+  if (!artistLink?.sys?.id) return null;
+  const artist = allEntries.find((e) => e.sys.id === artistLink.sys.id);
+  if (!artist) return null;
   return {
     navn: artist.fields.navn,
     beskrivelse: artist.fields.beskrivelse,
     genre: artist.fields.genre,
     spotifyLink: artist.fields.spotifyLink,
-    billede: resolveAsset(artist.fields?.billede)
-  }
-}
+    billede: resolveAsset(artist.fields?.billede),
+  };
+};
 
 const formatTime = (isoString) => {
-  if (!isoString) return null
-  const date = new Date(isoString)
-  return date.toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' })
-}
+  if (!isoString) return null;
+  const date = new Date(isoString);
+  return date.toLocaleTimeString("da-DK", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
 
 const formatDate = (isoString) => {
-  if (!isoString) return null
-  const date = new Date(isoString)
-  const day = String(date.getDate()).padStart(2, '0')
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const year = date.getFullYear()
-  return `${day}/${month}/${year}`
-}
+  if (!isoString) return null;
+  const date = new Date(isoString);
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
+};
 
-const koncerter = data.value.items.map(item => ({
+const koncerter = data.value.items.map((item) => ({
   id: item.sys.id,
   titel: item.fields.titel,
   bandName: item.fields.titel,
@@ -194,7 +197,9 @@ const koncerter = data.value.items.map(item => ({
   concertStart: formatTime(item.fields.datoOgKoncertStart),
   doereneAabner: item.fields.doereneAabner,
   doorsOpen: formatTime(item.fields.doereneAabner),
-  genre: Array.isArray(item.fields.genre) ? item.fields.genre[0] : item.fields.genre,
+  genre: Array.isArray(item.fields.genre)
+    ? item.fields.genre[0]
+    : item.fields.genre,
   pris: item.fields.pris,
   price: item.fields.pris,
   sal: item.fields.sal,
@@ -205,10 +210,10 @@ const koncerter = data.value.items.map(item => ({
   bandImage: resolveAsset(item.fields.koncertBillede),
   bandImages: [],
   hovedact: resolveArtist(item.fields.hovedact),
-  support: resolveArtist(item.fields.support)
-}))
+  support: resolveArtist(item.fields.support),
+}));
 
-console.log(data.value.items[0].fields.spotifyLinkKoncert)
+console.log(data.value.items[0].fields.spotifyLinkKoncert);
 </script>
 <template>
   <div class="hero full-bleed">

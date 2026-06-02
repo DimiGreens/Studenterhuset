@@ -12,50 +12,15 @@ import {
 import flatpickr from "flatpickr";
 import "flatpickr/dist/flatpickr.min.css";
 
-const formatDate = (iso) => {
-  if (!iso) return "";
-  const d = new Date(iso);
-  return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
-};
-
-const formatTime = (iso) => {
-  if (!iso) return "";
-  const d = new Date(iso);
-  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
-};
-
-// Content fra Contentful
-const { data: rawData, pending } = await useFetch("/api/contentful", {
-  query: { contentType: "koncerter", include: 3 },
-  fresh: true,
+// Modtager faerdig-mappet data fra concerts.vue. INGEN fetch her.
+const props = defineProps({
+  concert: {
+    type: Array,
+    default: () => [],
+  },
 });
 
-const concerts = computed(
-  () =>
-    rawData.value?.items?.map((entry) => {
-      const f = entry.fields;
-      const artist = f.hovedact?.fields;
-
-      return {
-        id: entry.sys.id,
-        bandName: artist?.navn ?? f.titel,
-        bandImage: artist?.billede?.fields?.file?.url
-          ? "https:" + artist.billede.fields.file.url
-          : null,
-        bandImages:
-          artist?.galleri?.map((img) => "https:" + img.fields.file.url) ?? [],
-        bandDescription: artist?.beskrivelse ?? "",
-        spotifyEmbed: f.spotifyLinkTilKoncertRelevantMusik ?? "",
-        genre: Array.isArray(f.genre) ? f.genre[0] : f.genre,
-        date: formatDate(f.datoOgKoncertStart),
-        concertStart: formatTime(f.datoOgKoncertStart),
-        doorsOpen: formatTime(f.doereneAabner),
-        venue: f.sal ?? "",
-        price: f.pris ?? 0,
-        ticketLink: f.billetLink ?? "",
-      };
-    }) ?? [],
-);
+const concerts = computed(() => props.concert);
 
 const dateInput = ref(null);
 const selectedDate = ref(null);
@@ -94,6 +59,7 @@ const filteredConcert = computed(() => {
   today.setHours(0, 0, 0, 0);
 
   let result = concerts.value.filter((item) => {
+    if (!item.date) return false;
     const [day, month, year] = item.date.split("/");
     const concertDate = new Date(year, month - 1, day);
     return concertDate >= today;
@@ -135,6 +101,7 @@ const otherConcerts = computed(() => {
   return concerts.value.filter((item) => {
     if (item.id === selectedConcert.value?.id) return false;
     if (item.genre !== selectedConcert.value?.genre) return false;
+    if (!item.date) return false;
 
     const [day, month, year] = item.date.split("/");
     const concertDate = new Date(year, month - 1, day);
@@ -180,8 +147,6 @@ const resetFilters = () => {
         Nulstil filtre
       </button>
     </div>
-
-    <div class="pending">Henter koncerter</div>
 
     <div v-if="!isDesktop" class="concert_wrapper">
       <div v-for="item in filteredConcert" :key="item.id" class="concert">
@@ -230,7 +195,8 @@ const resetFilters = () => {
             {{ item.bandDescription }}
           </p>
           <iframe
-            :src="`https://open.spotify.com/embed/track/${item.spotifyEmbed}`"
+            v-if="item.spotifyEmbed"
+            :src="`https://open.spotify.com/embed/album/${item.spotifyEmbed}`"
             width="100%"
             height="200"
             frameborder="0"
@@ -313,7 +279,8 @@ const resetFilters = () => {
             {{ item.bandDescription }}
           </p>
           <iframe
-            :src="`https://open.spotify.com/embed/track/${item.spotifyEmbed}`"
+            v-if="item.spotifyEmbed"
+            :src="`https://open.spotify.com/embed/album/${item.spotifyEmbed}`"
             width="100%"
             height="152"
             frameborder="0"
@@ -358,6 +325,7 @@ const resetFilters = () => {
                       {{ selectedConcert.bandDescription }}
                     </p>
                     <iframe
+                      v-if="selectedConcert.spotifyEmbed"
                       :src="`https://open.spotify.com/embed/album/${selectedConcert.spotifyEmbed}`"
                       width="100%"
                       height="152"
@@ -675,7 +643,6 @@ const resetFilters = () => {
   .concert_info {
     padding: 30px;
     flex-direction: column;
-    /* justify-content: space-between; */
     height: auto;
     min-width: 300px;
     display: flex;

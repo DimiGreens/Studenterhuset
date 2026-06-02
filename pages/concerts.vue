@@ -14,11 +14,6 @@ const { data } = await useFetch("/api/contentful", {
 const allEntries = data.value?.includes?.Entry ?? [];
 const allAssets = data.value?.includes?.Asset ?? [];
 
-const extractSpotifyId = (url) => {
-  if (!url) return null;
-  const parts = url.split("/");
-  return parts[parts.length - 1].split("?")[0];
-};
 
 const resolveAsset = (assetLink) => {
   if (!assetLink?.sys?.id) return null;
@@ -58,7 +53,7 @@ const koncerter = (data.value?.items ?? []).map((item) => {
     bandDescription: f.beskrivelse ?? "", // koncert-beskrivelse
     bandImage: resolveAsset(f.koncertBillede), // koncert-billede
     bandImages: [],
-    spotifyEmbed: extractSpotifyId(f.spotifyLinkKoncert),
+    spotifyEmbed: f.spotifyLinkKoncert,
     genre: Array.isArray(f.genre) ? f.genre[0] : f.genre,
     date: formatDate(f.datoOgKoncertStart),
     concertStart: formatTime(f.datoOgKoncertStart),
@@ -68,6 +63,7 @@ const koncerter = (data.value?.items ?? []).map((item) => {
     ticketLink: f.billetLink ?? "",
   };
 });
+console.log(koncerter)
 </script>
 
 <template>

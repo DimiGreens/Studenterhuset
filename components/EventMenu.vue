@@ -72,6 +72,14 @@ const filteredEvents = computed(() => {
   return result;
 });
 
+// Opdel i faste og enkeltstaaende begivenheder
+const fasteBegivenheder = computed(() =>
+  filteredEvents.value.filter((item) => item.fastBegivenhed),
+);
+const enkeltBegivenheder = computed(() =>
+  filteredEvents.value.filter((item) => !item.fastBegivenhed),
+);
+
 // Resize listener
 const onResize = () => (windowWidth.value = window.innerWidth);
 onMounted(() => window.addEventListener("resize", onResize));
@@ -139,257 +147,314 @@ const resetFilters = () => {
       </button>
     </div>
 
-    <!-- MOBIL -->
-    <div v-if="!isDesktop" class="card_wrapper">
-      <div v-for="item in filteredEvents" :key="item.id" class="event">
-        <div class="event_name">
-          <p>
-            {{ item.titel }}
-            <FontAwesomeIcon
-              v-if="item.fastBegivenhed"
-              :icon="faRotate"
-              class="recurring_icon"
-              title="Fast begivenhed"
-            />
-          </p>
-        </div>
-        <div class="event_image">
-          <img :src="item.billede" alt="" />
+    <!-- FASTE BEGIVENHEDER -->
+    <section v-if="fasteBegivenheder.length > 0" class="event_section_group">
+      <h2 class="section_heading">Faste begivenheder</h2>
 
-          <div class="event_button_wrapper">
-            <button class="event_button glass" @click="toggle(item.id)">
+      <!-- Mobil -->
+      <div v-if="!isDesktop" class="card_wrapper">
+        <div v-for="item in fasteBegivenheder" :key="item.id" class="event">
+          <div class="event_name">
+            <p>
+              {{ item.titel }}
               <FontAwesomeIcon
-                :icon="faAngleDown"
-                :class="{ rotated: openId === item.id }"
+                :icon="faRotate"
+                class="recurring_icon"
+                title="Fast begivenhed"
               />
-            </button>
+            </p>
+          </div>
+          <div class="event_image">
+            <img :src="item.billede" alt="" />
+            <div class="event_button_wrapper">
+              <button class="event_button glass" @click="toggle(item.id)">
+                <FontAwesomeIcon
+                  :icon="faAngleDown"
+                  :class="{ rotated: openId === item.id }"
+                />
+              </button>
+            </div>
+          </div>
+          <div class="event_info">
+            <p>{{ item.venue }}</p>
+            <p>{{ item.dato }}</p>
+            <p v-if="item.pris">{{ item.pris }},-</p>
+            <p v-else>Gratis</p>
+          </div>
+          <div
+            :ref="(el) => { if (el) contentRefs[item.id] = el; }"
+            class="event_content"
+            :style="
+              openId === item.id
+                ? { maxHeight: contentRefs[item.id]?.scrollHeight + 'px', paddingBottom: '20px' }
+                : { maxHeight: '0px', paddingBottom: '0px' }
+            "
+          >
+            <p class="event_info_box">{{ item.beskrivelse }}</p>
+            <div class="mobile_infobox">
+              <div class="infoText"><p>Dato:</p><p>{{ item.dato }}</p></div>
+              <div class="infoText"><p>Tid:</p><p>{{ item.tid }}</p></div>
+              <div class="infoText"><p>Venue:</p><p>{{ item.venue }}</p></div>
+              <div class="infoText"><p>Pris:</p><p>{{ item.pris ? item.pris + ',-' : 'Gratis' }}</p></div>
+              <div v-if="item.billetLink" class="button_wrapper">
+                <a :href="item.billetLink" target="_blank" class="glass ticket_button">Køb billet</a>
+              </div>
+            </div>
           </div>
         </div>
+      </div>
 
-        <div class="event_info">
-          <p>{{ item.venue }}</p>
-          <p>{{ item.dato }}</p>
-          <p v-if="item.pris">{{ item.pris }},-</p>
-          <p v-else>Gratis</p>
-        </div>
-
+      <!-- Desktop -->
+      <div v-if="isDesktop" class="card_wrapper">
         <div
-          :ref="
-            (el) => {
-              if (el) contentRefs[item.id] = el;
-            }
-          "
-          class="event_content"
-          :style="
-            openId === item.id
-              ? {
-                  maxHeight: contentRefs[item.id]?.scrollHeight + 'px',
-                  paddingBottom: '20px',
-                }
-              : {
-                  maxHeight: '0px',
-                  paddingBottom: '0px',
-                }
-          "
+          v-for="item in fasteBegivenheder"
+          :key="item.id"
+          class="event"
+          @click="openModal(item)"
         >
-          <p class="event_info_box">
-            {{ item.beskrivelse }}
-          </p>
-          <div class="mobile_infobox">
-            <div class="infoText">
-              <p>Dato:</p>
-              <p>{{ item.dato }}</p>
-            </div>
-            <div class="infoText">
-              <p>Tid:</p>
-              <p>{{ item.tid }}</p>
-            </div>
-            <div class="infoText">
-              <p>Venue:</p>
-              <p>{{ item.venue }}</p>
-            </div>
-            <div class="infoText">
-              <p>Pris:</p>
-              <p>{{ item.pris ? item.pris + ',-' : 'Gratis' }}</p>
-            </div>
-            <div v-if="item.billetLink" class="button_wrapper">
-              <a :href="item.billetLink" target="_blank" class="glass ticket_button">Køb billet</a>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- DESKTOP -->
-    <div v-if="isDesktop" class="card_wrapper">
-      <div
-        v-for="item in filteredEvents"
-        :key="item.id"
-        class="event"
-        @click="openModal(item)"
-      >
-        <div class="event_name">
-          <p>
-            {{ item.titel }}
-            <FontAwesomeIcon
-              v-if="item.fastBegivenhed"
-              :icon="faRotate"
-              class="recurring_icon"
-              title="Fast begivenhed"
-            />
-          </p>
-        </div>
-        <div class="event_image">
-          <img :src="item.billede" alt="" />
-        </div>
-
-        <div class="event_info">
-          <p>{{ item.venue }}</p>
-          <p>{{ item.dato }}</p>
-          <p v-if="item.pris">{{ item.pris }},-</p>
-          <p v-else>Gratis</p>
-        </div>
-      </div>
-
-      <!-- MODAL -->
-      <Teleport to="body">
-        <Transition name="modal">
-          <div
-            v-if="selectedEvent"
-            class="modal_backdrop"
-            @click.self="closeModal"
-          >
-            <div class="modal_container">
-              <div class="modal">
-                <div class="image_wrapper">
-                  <button class="modal_close glass" @click="closeModal">
-                    <FontAwesomeIcon :icon="faXmark" />
-                  </button>
-                  <button
-                    v-if="selectedEvent.billeder.length > 1"
-                    class="modal_event-gallery glass"
-                    @click.stop="openSlider(selectedEvent, 0)"
-                  >
-                    <FontAwesomeIcon :icon="faExpand" />
-                  </button>
-                  <img
-                    :src="selectedEvent.billede"
-                    alt=""
-                    class="modal_image"
-                  />
-                </div>
-                <div class="opened_modal_eventbox">
-                  <div class="event_detail">
-                    <h2>
-                      {{ selectedEvent.titel }}
-                      <FontAwesomeIcon
-                        v-if="selectedEvent.fastBegivenhed"
-                        :icon="faRotate"
-                        class="recurring_icon"
-                        title="Fast begivenhed"
-                      />
-                    </h2>
-                    <p class="event_info_box">
-                      {{ selectedEvent.beskrivelse }}
-                    </p>
-                  </div>
-                  <div class="event_info">
-                    <div class="infoText">
-                      <p>Dato:</p>
-                      <p>{{ selectedEvent.dato }}</p>
-                    </div>
-                    <div class="infoText">
-                      <p>Tid:</p>
-                      <p>{{ selectedEvent.tid }}</p>
-                    </div>
-                    <div class="infoText">
-                      <p>Venue:</p>
-                      <p>{{ selectedEvent.venue }}</p>
-                    </div>
-                    <div class="infoText">
-                      <p>Pris:</p>
-                      <p>{{ selectedEvent.pris ? selectedEvent.pris + ',-' : 'Gratis' }}</p>
-                    </div>
-                    <div v-if="selectedEvent.billetLink" class="button_wrapper">
-                      <a :href="selectedEvent.billetLink" target="_blank" class="glass ticket_button">Køb billet</a>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div class="modal_sidebar">
-                <h3>Andre begivenheder</h3>
-                <p
-                  v-if="otherEvents.length === 0"
-                  style="color: white; font-size: 14px"
-                >
-                  Ingen andre kommende begivenheder
-                </p>
-                <div
-                  v-for="item in otherEvents"
-                  :key="item.id"
-                  class="sidebar_event"
-                  @click="openModal(item)"
-                >
-                  <img :src="item.billede" />
-                  <div class="sidebar_overlay">
-                    <span class="glass"
-                      >{{ item.titel }}
-                      <FontAwesomeIcon
-                        :icon="faAngleRight"
-                        class="sidebar_icon"
-                    /></span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </Transition>
-      </Teleport>
-
-      <!-- SLIDER -->
-      <Teleport to="body">
-        <Transition name="modal">
-          <div
-            v-if="sliderEvent"
-            class="modal_backdrop"
-            @click.self="closeSlider"
-          >
-            <div class="slider_container">
-              <button class="modal_close glass" @click="closeSlider">
-                <FontAwesomeIcon :icon="faXmark" />
-              </button>
-
-              <button class="slider_arrow left glass" @click="prevSlide">
-                <FontAwesomeIcon :icon="faAngleLeft" />
-              </button>
-
-              <img
-                :src="sliderEvent.billeder[sliderIndex]"
-                class="slider_image"
+          <div class="event_name">
+            <p>
+              {{ item.titel }}
+              <FontAwesomeIcon
+                :icon="faRotate"
+                class="recurring_icon"
+                title="Fast begivenhed"
               />
+            </p>
+          </div>
+          <div class="event_image">
+            <img :src="item.billede" alt="" />
+          </div>
+          <div class="event_info">
+            <p>{{ item.venue }}</p>
+            <p>{{ item.dato }}</p>
+            <p v-if="item.pris">{{ item.pris }},-</p>
+            <p v-else>Gratis</p>
+          </div>
+        </div>
+      </div>
+    </section>
 
-              <button class="slider_arrow right glass" @click="nextSlide">
-                <FontAwesomeIcon :icon="faAngleRight" />
+    <!-- ØVRIGE BEGIVENHEDER -->
+    <section v-if="enkeltBegivenheder.length > 0" class="event_section_group">
+      <h2 class="section_heading">Kommende begivenheder</h2>
+
+      <!-- Mobil -->
+      <div v-if="!isDesktop" class="card_wrapper">
+        <div v-for="item in enkeltBegivenheder" :key="item.id" class="event">
+          <div class="event_name">
+            <p>{{ item.titel }}</p>
+          </div>
+          <div class="event_image">
+            <img :src="item.billede" alt="" />
+            <div class="event_button_wrapper">
+              <button class="event_button glass" @click="toggle(item.id)">
+                <FontAwesomeIcon
+                  :icon="faAngleDown"
+                  :class="{ rotated: openId === item.id }"
+                />
               </button>
+            </div>
+          </div>
+          <div class="event_info">
+            <p>{{ item.venue }}</p>
+            <p>{{ item.dato }}</p>
+            <p v-if="item.pris">{{ item.pris }},-</p>
+            <p v-else>Gratis</p>
+          </div>
+          <div
+            :ref="(el) => { if (el) contentRefs[item.id] = el; }"
+            class="event_content"
+            :style="
+              openId === item.id
+                ? { maxHeight: contentRefs[item.id]?.scrollHeight + 'px', paddingBottom: '20px' }
+                : { maxHeight: '0px', paddingBottom: '0px' }
+            "
+          >
+            <p class="event_info_box">{{ item.beskrivelse }}</p>
+            <div class="mobile_infobox">
+              <div class="infoText"><p>Dato:</p><p>{{ item.dato }}</p></div>
+              <div class="infoText"><p>Tid:</p><p>{{ item.tid }}</p></div>
+              <div class="infoText"><p>Venue:</p><p>{{ item.venue }}</p></div>
+              <div class="infoText"><p>Pris:</p><p>{{ item.pris ? item.pris + ',-' : 'Gratis' }}</p></div>
+              <div v-if="item.billetLink" class="button_wrapper">
+                <a :href="item.billetLink" target="_blank" class="glass ticket_button">Køb billet</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-              <div class="slider_dots">
-                <span
-                  v-for="(_, i) in sliderEvent.billeder"
-                  :key="i"
-                  :class="['dot', { active: i === sliderIndex }]"
-                  @click="sliderIndex = i"
+      <!-- Desktop -->
+      <div v-if="isDesktop" class="card_wrapper">
+        <div
+          v-for="item in enkeltBegivenheder"
+          :key="item.id"
+          class="event"
+          @click="openModal(item)"
+        >
+          <div class="event_name">
+            <p>{{ item.titel }}</p>
+          </div>
+          <div class="event_image">
+            <img :src="item.billede" alt="" />
+          </div>
+          <div class="event_info">
+            <p>{{ item.venue }}</p>
+            <p>{{ item.dato }}</p>
+            <p v-if="item.pris">{{ item.pris }},-</p>
+            <p v-else>Gratis</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- MODAL (delt af begge sektioner) -->
+    <Teleport to="body">
+      <Transition name="modal">
+        <div
+          v-if="selectedEvent"
+          class="modal_backdrop"
+          @click.self="closeModal"
+        >
+          <div class="modal_container">
+            <div class="modal">
+              <div class="image_wrapper">
+                <button class="modal_close glass" @click="closeModal">
+                  <FontAwesomeIcon :icon="faXmark" />
+                </button>
+                <button
+                  v-if="selectedEvent.billeder.length > 1"
+                  class="modal_event-gallery glass"
+                  @click.stop="openSlider(selectedEvent, 0)"
+                >
+                  <FontAwesomeIcon :icon="faExpand" />
+                </button>
+                <img
+                  :src="selectedEvent.billede"
+                  alt=""
+                  class="modal_image"
                 />
               </div>
+              <div class="opened_modal_eventbox">
+                <div class="event_detail">
+                  <h2>
+                    {{ selectedEvent.titel }}
+                    <FontAwesomeIcon
+                      v-if="selectedEvent.fastBegivenhed"
+                      :icon="faRotate"
+                      class="recurring_icon"
+                      title="Fast begivenhed"
+                    />
+                  </h2>
+                  <p class="event_info_box">
+                    {{ selectedEvent.beskrivelse }}
+                  </p>
+                </div>
+                <div class="event_info">
+                  <div class="infoText">
+                    <p>Dato:</p>
+                    <p>{{ selectedEvent.dato }}</p>
+                  </div>
+                  <div class="infoText">
+                    <p>Tid:</p>
+                    <p>{{ selectedEvent.tid }}</p>
+                  </div>
+                  <div class="infoText">
+                    <p>Venue:</p>
+                    <p>{{ selectedEvent.venue }}</p>
+                  </div>
+                  <div class="infoText">
+                    <p>Pris:</p>
+                    <p>{{ selectedEvent.pris ? selectedEvent.pris + ',-' : 'Gratis' }}</p>
+                  </div>
+                  <div v-if="selectedEvent.billetLink" class="button_wrapper">
+                    <a :href="selectedEvent.billetLink" target="_blank" class="glass ticket_button">Køb billet</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="modal_sidebar">
+              <h3>Andre begivenheder</h3>
+              <p
+                v-if="otherEvents.length === 0"
+                style="color: white; font-size: 14px"
+              >
+                Ingen andre kommende begivenheder
+              </p>
+              <div
+                v-for="item in otherEvents"
+                :key="item.id"
+                class="sidebar_event"
+                @click="openModal(item)"
+              >
+                <img :src="item.billede" />
+                <div class="sidebar_overlay">
+                  <span class="glass"
+                    >{{ item.titel }}
+                    <FontAwesomeIcon
+                      :icon="faAngleRight"
+                      class="sidebar_icon"
+                  /></span>
+                </div>
+              </div>
             </div>
           </div>
-        </Transition>
-      </Teleport>
-    </div>
+        </div>
+      </Transition>
+    </Teleport>
+
+    <!-- SLIDER (delt af begge sektioner) -->
+    <Teleport to="body">
+      <Transition name="modal">
+        <div
+          v-if="sliderEvent"
+          class="modal_backdrop"
+          @click.self="closeSlider"
+        >
+          <div class="slider_container">
+            <button class="modal_close glass" @click="closeSlider">
+              <FontAwesomeIcon :icon="faXmark" />
+            </button>
+
+            <button class="slider_arrow left glass" @click="prevSlide">
+              <FontAwesomeIcon :icon="faAngleLeft" />
+            </button>
+
+            <img
+              :src="sliderEvent.billeder[sliderIndex]"
+              class="slider_image"
+            />
+
+            <button class="slider_arrow right glass" @click="nextSlide">
+              <FontAwesomeIcon :icon="faAngleRight" />
+            </button>
+
+            <div class="slider_dots">
+              <span
+                v-for="(_, i) in sliderEvent.billeder"
+                :key="i"
+                :class="['dot', { active: i === sliderIndex }]"
+                @click="sliderIndex = i"
+              />
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
 <style scoped>
+.event_section_group {
+  margin-bottom: 40px;
+}
+
+.section_heading {
+  margin-bottom: 10px;
+}
+
 .recurring_icon {
   width: 16px;
   height: 16px;

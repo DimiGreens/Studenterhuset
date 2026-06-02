@@ -25,7 +25,6 @@ const menu = data.value.items[0].fields.menuSektioner.map((sektionLink) => {
   };
 });
 
-console.log(data.value);
 </script>
 
 <template>

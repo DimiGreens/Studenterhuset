@@ -12,7 +12,6 @@ import {
 import flatpickr from "flatpickr";
 import "flatpickr/dist/flatpickr.min.css";
 
-// Modtager faerdig-mappet data fra concerts.vue. INGEN fetch her.
 const props = defineProps({
   concert: {
     type: Array,
@@ -33,6 +32,32 @@ const sliderIndex = ref(0);
 const windowWidth = ref(
   typeof window !== "undefined" ? window.innerWidth : 1024,
 );
+
+const priceRange = ref([0, 500]);
+const minPrice = ref(0);
+const maxPrice = ref(500);
+
+const availableGenres = computed(() => {
+  const genres = props.concert.map((c) => c.genre).filter(Boolean);
+  return [...new Set(genres)].sort();
+});
+
+const hasActiveFilters = computed(
+  () =>
+    selectedGenre.value !== "all" ||
+    selectedDate.value !== null ||
+    priceRange.value[0] !== minPrice.value ||
+    priceRange.value[1] !== maxPrice.value,
+);
+
+function clampMin() {
+  if (priceRange.value[0] > priceRange.value[1])
+    priceRange.value[0] = priceRange.value[1];
+}
+function clampMax() {
+  if (priceRange.value[1] < priceRange.value[0])
+    priceRange.value[1] = priceRange.value[0];
+}
 
 const openSlider = (item, startIndex = 0) => {
   sliderConcert.value = {
@@ -72,6 +97,11 @@ const filteredConcert = computed(() => {
   if (selectedDate.value) {
     result = result.filter((item) => item.date === selectedDate.value);
   }
+
+  result = result.filter(
+    (item) =>
+      item.price >= priceRange.value[0] && item.price <= priceRange.value[1],
+  );
 
   return result;
 });
@@ -118,29 +148,65 @@ onMounted(() => {
       selectedDate.value = dateStr;
     },
   });
+
+  const prices = props.concert.map((c) => c.price).filter((p) => p != null);
+  if (prices.length) {
+    minPrice.value = Math.min(...prices);
+    maxPrice.value = Math.max(...prices);
+    priceRange.value = [minPrice.value, maxPrice.value];
+  }
 });
 
 const resetFilters = () => {
   selectedGenre.value = "all";
   selectedDate.value = null;
   datePicker.value.clear();
+  priceRange.value = [minPrice.value, maxPrice.value];
 };
+
+function toSpotifyEmbed(url) {
+  if (!url) return null
+  return url.replace('open.spotify.com/', 'open.spotify.com/embed/')
+}
 </script>
 
 <template>
   <div class="concert-section container container--lg">
     <div class="filter_wrapper">
-      <select v-model="selectedGenre" id="genre_selector" class="glass">
-        <option value="all">All genres</option>
-        <option value="pop">Pop</option>
-        <option value="rock">Rock</option>
-        <option value="metal">Metal</option>
+      <!-- Genre dropdown -->
+      <select v-model="selectedGenre" class="glass">
+        <option value="all">Alle genrer</option>
+        <option v-for="genre in availableGenres" :key="genre" :value="genre">
+          {{ genre }}
+        </option>
       </select>
 
-      <input ref="dateInput" class="glass" placeholder="All dates" readonly />
+      <!-- Dato -->
+      <input ref="dateInput" class="glass" placeholder="Alle datoer" readonly />
+
+      <!-- Pris slider -->
+      <div class="price_slider">
+        <p class="price_label">{{ priceRange[0] }}kr – {{ priceRange[1] }}kr</p>
+        <div class="range_track">
+          <input
+            type="range"
+            :min="minPrice"
+            :max="maxPrice"
+            v-model.number="priceRange[0]"
+            @input="clampMin"
+          />
+          <input
+            type="range"
+            :min="minPrice"
+            :max="maxPrice"
+            v-model.number="priceRange[1]"
+            @input="clampMax"
+          />
+        </div>
+      </div>
 
       <button
-        v-if="selectedGenre !== 'all' || selectedDate"
+        v-if="hasActiveFilters"
         class="glass reset_button"
         @click="resetFilters"
       >
@@ -196,7 +262,7 @@ const resetFilters = () => {
           </p>
           <iframe
             v-if="item.spotifyEmbed"
-            :src="`https://open.spotify.com/embed/album/${item.spotifyEmbed}`"
+            :src="toSpotifyEmbed(item.spotifyEmbed)"
             width="100%"
             height="200"
             frameborder="0"
@@ -280,7 +346,7 @@ const resetFilters = () => {
           </p>
           <iframe
             v-if="item.spotifyEmbed"
-            :src="`https://open.spotify.com/embed/album/${item.spotifyEmbed}`"
+            :src="toSpotifyEmbed(item.spotifyEmbed)"
             width="100%"
             height="152"
             frameborder="0"
@@ -326,7 +392,7 @@ const resetFilters = () => {
                     </p>
                     <iframe
                       v-if="selectedConcert.spotifyEmbed"
-                      :src="`https://open.spotify.com/embed/album/${selectedConcert.spotifyEmbed}`"
+                      :src="toSpotifyEmbed(selectedConcert.spotifyEmbed)"
                       width="100%"
                       height="152"
                       frameborder="0"
@@ -456,9 +522,10 @@ const resetFilters = () => {
 
 .filter_wrapper {
   display: flex;
-  align-items: center;
-  gap: 15px;
+  align-items: flex-start;
+  gap: 30px;
   margin: 30px 0;
+  flex-wrap: wrap;
 }
 
 .filter_wrapper select,
@@ -482,6 +549,7 @@ const resetFilters = () => {
   font-size: 20px;
   padding: 0 20px;
   cursor: pointer;
+  align-self: center;
 }
 
 #genre_selector {
@@ -489,6 +557,88 @@ const resetFilters = () => {
   width: 150px;
   font-size: 24px;
   margin-top: 30px;
+}
+
+/* Genre checkboxes — samme udseende som originalen */
+.genre_checkboxes {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.checkbox_label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.checkbox_label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #5774b8;
+  cursor: pointer;
+}
+
+/* Pris slider */
+.price_slider {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 200px;
+  align-self: center;
+}
+
+.price_label {
+  font-size: 18px;
+  margin: 0;
+}
+
+.range_track {
+  position: relative;
+  height: 2rem;
+}
+
+.range_track input[type="range"] {
+  position: absolute;
+  width: 100%;
+  pointer-events: none;
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.range_track input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 2px;
+}
+
+.range_track input[type="range"]::-webkit-slider-thumb {
+  pointer-events: all;
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #5774b8;
+  cursor: pointer;
+  margin-top: -8px;
+  border: none;
+}
+
+.range_track input[type="range"]::-moz-range-thumb {
+  pointer-events: all;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #5774b8;
+  cursor: pointer;
+  border: none;
 }
 
 .concert {

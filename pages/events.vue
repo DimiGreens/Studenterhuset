@@ -1,47 +1,75 @@
 <script setup>
-const resolveAsset = (asset) => {
-  return asset?.fields?.file?.url ? `https:${asset.fields.file.url}` : null;
-};
+// Henter begivenheder fra Contentful og mapper data til EventMenu
 
 const { data } = await useFetch("/api/contentful", {
   query: { contentType: "begivenheder", include: 3 },
   fresh: true,
 });
 
-const begivenheder = data.value.items.map((item) => ({
-  id: item.sys.id,
-  titel: item.fields.titel,
-  beskrivelse: item.fields.beskrivelse,
+// Resolved assets ligger i includes, ikke direkte paa felterne
+const allAssets = data.value?.includes?.Asset ?? [];
 
-  dato: item.fields.datoOgBegivenhedsStart,
-  doereneAabner: item.fields.doerneAabner,
+const resolveAsset = (assetLink) => {
+  if (!assetLink?.sys?.id) return null;
+  const asset = allAssets.find((a) => a.sys.id === assetLink.sys.id);
+  return asset ? "https:" + asset.fields.file.url : null;
+};
 
-  pris: item.fields.pris,
-  price: item.fields.pris,
+const formatDate = (iso) => {
+  if (!iso) return "";
+  const d = new Date(iso);
+  return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
+};
 
-  venue: item.fields.venue,
-  billetLink: item.fields.billetLink,
+const formatTime = (iso) => {
+  if (!iso) return "";
+  const d = new Date(iso);
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+};
 
-  // Media: many files → array
-  billede: item.fields.billeder ? item.fields.billeder.map(resolveAsset) : [],
+// Flad datastruktur som EventMenu kan bruge direkte
+const begivenheder = (data.value?.items ?? []).map((item) => {
+  const f = item.fields;
 
-  billede: item.fields.billeder.url,
-
-  fastBegivenhed: item.fields.fastBegivenhed,
-}));
-
-console.log(begivenheder);
+  return {
+    id: item.sys.id,
+    titel: f.titel ?? "",
+    beskrivelse: f.beskrivelse ?? "",
+    // billeder er et array af asset-links — resolve dem alle
+    billeder: Array.isArray(f.billeder)
+      ? f.billeder.map(resolveAsset).filter(Boolean)
+      : [],
+    // Brug foerste billede som hovedbillede
+    billede: Array.isArray(f.billeder) ? resolveAsset(f.billeder[0]) : null,
+    dato: formatDate(f.dato),
+    tid: formatTime(f.dato),
+    venue: f.venue ?? "",
+    pris: f.pris ?? null,
+    billetLink: f.billetLink ?? null,
+    fastBegivenhed: f.fastBegivenhed ?? false,
+  };
+});
 </script>
 
 <template>
-    <div class="hero_image">
-      <img src="../assets/images/Studenterhuset_begivenheder.jpg" alt="">
-    </div>
+  <div class="hero_image full-bleed">
+    <img src="../assets/images/Studenterhuset_begivenheder.jpg" alt="" />
+  </div>
+
+  <div class="container container--md mt-4 mb-3">
+    <h1>Begivenheder</h1>
+    <p>
+      Der sker altid noget på Studenterhuset. Fra fredagsbarer og quizaftener
+      til kreative workshops og fællesspisning. Kig forbi og bliv en del af
+      fællesskabet.
+    </p>
+  </div>
+
+  <EventMenu :events="begivenheder" />
 </template>
+
 <style scoped>
 .hero_image {
-  margin: 0 -15px;
-
   img {
     height: 80vh;
     width: 100%;

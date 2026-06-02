@@ -1,36 +1,163 @@
-<script setup></script>
+<script setup>
+import { ref, computed, onMounted, onUnmounted } from "vue";
+import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
+import {
+  faAngleDown,
+  faAngleRight,
+  faAngleLeft,
+  faExpand,
+  faXmark,
+  faRotate,
+} from "@fortawesome/free-solid-svg-icons";
+
+import flatpickr from "flatpickr";
+import "flatpickr/dist/flatpickr.min.css";
+
+// Modtager faerdig-mappet data fra events.vue
+const props = defineProps({
+  events: {
+    type: Array,
+    default: () => [],
+  },
+});
+
+const allEvents = computed(() => props.events);
+
+const dateInput = ref(null);
+const selectedDate = ref(null);
+const openId = ref(null);
+const contentRefs = ref({});
+const selectedEvent = ref(null);
+const sliderEvent = ref(null);
+const sliderIndex = ref(0);
+const windowWidth = ref(
+  typeof window !== "undefined" ? window.innerWidth : 1024,
+);
+
+// Slider funktioner
+const openSlider = (item, startIndex = 0) => {
+  sliderEvent.value = { ...item };
+  sliderIndex.value = startIndex;
+};
+const closeSlider = () => (sliderEvent.value = null);
+const prevSlide = () =>
+  (sliderIndex.value =
+    (sliderIndex.value - 1 + sliderEvent.value.billeder.length) %
+    sliderEvent.value.billeder.length);
+const nextSlide = () =>
+  (sliderIndex.value =
+    (sliderIndex.value + 1) % sliderEvent.value.billeder.length);
+
+// Accordion toggle (mobil)
+const toggle = (id) => {
+  openId.value = openId.value === id ? null : id;
+};
+
+// Filtrering: kun fremtidige begivenheder + dato-filter
+const filteredEvents = computed(() => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  let result = allEvents.value.filter((item) => {
+    if (!item.dato) return false;
+    const [day, month, year] = item.dato.split("/");
+    const eventDate = new Date(year, month - 1, day);
+    return eventDate >= today;
+  });
+
+  if (selectedDate.value) {
+    result = result.filter((item) => item.dato === selectedDate.value);
+  }
+
+  return result;
+});
+
+// Resize listener
+const onResize = () => (windowWidth.value = window.innerWidth);
+onMounted(() => window.addEventListener("resize", onResize));
+onUnmounted(() => {
+  window.removeEventListener("resize", onResize);
+  document.body.style.overflow = "";
+});
+
+const isDesktop = computed(() => windowWidth.value > 992);
+
+// Modal funktioner (desktop)
+const openModal = (item) => {
+  selectedEvent.value = item;
+  document.body.style.overflow = "hidden";
+};
+const closeModal = () => {
+  selectedEvent.value = null;
+  document.body.style.overflow = "";
+};
+
+// Andre begivenheder i sidebar (ekskluder den valgte)
+const otherEvents = computed(() => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  return allEvents.value.filter((item) => {
+    if (item.id === selectedEvent.value?.id) return false;
+    if (!item.dato) return false;
+
+    const [day, month, year] = item.dato.split("/");
+    const eventDate = new Date(year, month - 1, day);
+    return eventDate >= today;
+  });
+});
+
+// Dato-picker
+const datePicker = ref(null);
+
+onMounted(() => {
+  datePicker.value = flatpickr(dateInput.value, {
+    dateFormat: "d/m/Y",
+    onChange: (selectedDates, dateStr) => {
+      selectedDate.value = dateStr;
+    },
+  });
+});
+
+const resetFilters = () => {
+  selectedDate.value = null;
+  datePicker.value.clear();
+};
+</script>
 
 <template>
-  <div class="concert-section container container--lg">
+  <div class="event-section container container--lg">
     <div class="filter_wrapper">
-      <select v-model="selectedGenre" id="genre_selector" class="glass">
-        <option value="all">All genres</option>
-        <option value="pop">Pop</option>
-        <option value="rock">Rock</option>
-        <option value="metal">Metal</option>
-      </select>
-
-      <input ref="dateInput" class="glass" placeholder="All dates" readonly />
+      <input ref="dateInput" class="glass" placeholder="Alle datoer" readonly />
 
       <button
-        v-if="selectedGenre !== 'all' || selectedDate"
+        v-if="selectedDate"
         class="glass reset_button"
         @click="resetFilters"
       >
-        Nulstil filtre
+        Nulstil filter
       </button>
     </div>
 
-    <div v-if="!isDesktop" class="concert_wrapper">
-      <div v-for="item in filteredConcert" :key="item.id" class="concert">
-        <div class="band_name">
-          <p>{{ item.bandName }}</p>
+    <!-- MOBIL -->
+    <div v-if="!isDesktop" class="card_wrapper">
+      <div v-for="item in filteredEvents" :key="item.id" class="event">
+        <div class="event_name">
+          <p>
+            {{ item.titel }}
+            <FontAwesomeIcon
+              v-if="item.fastBegivenhed"
+              :icon="faRotate"
+              class="recurring_icon"
+              title="Fast begivenhed"
+            />
+          </p>
         </div>
-        <div class="concert_image">
-          <img :src="item.bandImage" alt="" />
+        <div class="event_image">
+          <img :src="item.billede" alt="" />
 
-          <div class="concert_button_wrapper">
-            <button class="concert_button glass" @click="toggle(item.id)">
+          <div class="event_button_wrapper">
+            <button class="event_button glass" @click="toggle(item.id)">
               <FontAwesomeIcon
                 :icon="faAngleDown"
                 :class="{ rotated: openId === item.id }"
@@ -39,10 +166,11 @@
           </div>
         </div>
 
-        <div class="concert_info">
-          <p>{{ item.genre }}</p>
-          <p>{{ item.date }}</p>
-          <p>{{ item.price }},-</p>
+        <div class="event_info">
+          <p>{{ item.venue }}</p>
+          <p>{{ item.dato }}</p>
+          <p v-if="item.pris">{{ item.pris }},-</p>
+          <p v-else>Gratis</p>
         </div>
 
         <div
@@ -51,7 +179,7 @@
               if (el) contentRefs[item.id] = el;
             }
           "
-          class="concert_content"
+          class="event_content"
           :style="
             openId === item.id
               ? {
@@ -64,33 +192,17 @@
                 }
           "
         >
-          <p class="band_info_box">
-            {{ item.bandDescription }}
+          <p class="event_info_box">
+            {{ item.beskrivelse }}
           </p>
-          <iframe
-            :src="`https://open.spotify.com/embed/track/${item.spotifyEmbed}`"
-            width="100%"
-            height="200"
-            frameborder="0"
-            loading="lazy"
-            allow="autoplay; clipboard-write; encrypted-media"
-          />
           <div class="mobile_infobox">
             <div class="infoText">
               <p>Dato:</p>
-              <p>{{ item.date }}</p>
+              <p>{{ item.dato }}</p>
             </div>
             <div class="infoText">
-              <p>genre:</p>
-              <p>{{ item.genre }}</p>
-            </div>
-            <div class="infoText">
-              <p>Koncert start:</p>
-              <p>{{ item.concertStart }}</p>
-            </div>
-            <div class="infoText">
-              <p>Døre åbner:</p>
-              <p>{{ item.doorsOpen }}</p>
+              <p>Tid:</p>
+              <p>{{ item.tid }}</p>
             </div>
             <div class="infoText">
               <p>Venue:</p>
@@ -98,76 +210,52 @@
             </div>
             <div class="infoText">
               <p>Pris:</p>
-              <p>{{ item.price }},-</p>
+              <p>{{ item.pris ? item.pris + ',-' : 'Gratis' }}</p>
             </div>
-            <div class="button_wrapper">
-              <button class="glass ticket_button">Køb billet</button>
+            <div v-if="item.billetLink" class="button_wrapper">
+              <a :href="item.billetLink" target="_blank" class="glass ticket_button">Køb billet</a>
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <div v-if="isDesktop" class="concert_wrapper">
+    <!-- DESKTOP -->
+    <div v-if="isDesktop" class="card_wrapper">
       <div
-        v-for="item in filteredConcert"
+        v-for="item in filteredEvents"
         :key="item.id"
-        class="concert"
+        class="event"
         @click="openModal(item)"
       >
-        <div class="band_name">
-          <p>{{ item.bandName }}</p>
-        </div>
-        <div class="concert_image">
-          <img :src="item.bandImage" alt="" />
-        </div>
-
-        <div class="concert_info">
-          <p>{{ item.genre }}</p>
-          <p>{{ item.date }}</p>
-          <p>{{ item.price }},-</p>
-        </div>
-
-        <div
-          :ref="
-            (el) => {
-              if (el) contentRefs[item.id] = el;
-            }
-          "
-          class="concert_content"
-          :style="
-            openId === item.id
-              ? {
-                  maxHeight: contentRefs[item.id]?.scrollHeight + 'px',
-                  paddingBottom: '20px',
-                }
-              : {
-                  maxHeight: '0px',
-                  paddingBottom: '0px',
-                }
-          "
-        >
-          <p class="band_info_box">
-            {{ item.bandDescription }}
+        <div class="event_name">
+          <p>
+            {{ item.titel }}
+            <FontAwesomeIcon
+              v-if="item.fastBegivenhed"
+              :icon="faRotate"
+              class="recurring_icon"
+              title="Fast begivenhed"
+            />
           </p>
-          <iframe
-            :src="`https://open.spotify.com/embed/track/${item.spotifyEmbed}`"
-            width="100%"
-            height="152"
-            frameborder="0"
-            loading="lazy"
-            allow="autoplay; clipboard-write; encrypted-media"
-          />
-          <div class="button_wrapper">
-            <button class="glass ticket_button">Køb billet</button>
-          </div>
+        </div>
+        <div class="event_image">
+          <img :src="item.billede" alt="" />
+        </div>
+
+        <div class="event_info">
+          <p>{{ item.venue }}</p>
+          <p>{{ item.dato }}</p>
+          <p v-if="item.pris">{{ item.pris }},-</p>
+          <p v-else>Gratis</p>
         </div>
       </div>
 
+      <!-- MODAL -->
       <Teleport to="body">
         <Transition name="modal">
           <div
-            v-if="selectedConcert"
+            v-if="selectedEvent"
             class="modal_backdrop"
             @click.self="closeModal"
           >
@@ -178,82 +266,75 @@
                     <FontAwesomeIcon :icon="faXmark" />
                   </button>
                   <button
-                    class="modal_band-gallery glass"
-                    @click.stop="openSlider(selectedConcert, 0)"
+                    v-if="selectedEvent.billeder.length > 1"
+                    class="modal_event-gallery glass"
+                    @click.stop="openSlider(selectedEvent, 0)"
                   >
                     <FontAwesomeIcon :icon="faExpand" />
                   </button>
                   <img
-                    :src="selectedConcert.bandImage"
+                    :src="selectedEvent.billede"
                     alt=""
                     class="modal_image"
                   />
                 </div>
-                <div class="opened_modal_bandbox">
-                  <div class="band_detail">
-                    <h2>{{ selectedConcert.bandName }}</h2>
-                    <p class="band_info_box">
-                      {{ selectedConcert.bandDescription }}
+                <div class="opened_modal_eventbox">
+                  <div class="event_detail">
+                    <h2>
+                      {{ selectedEvent.titel }}
+                      <FontAwesomeIcon
+                        v-if="selectedEvent.fastBegivenhed"
+                        :icon="faRotate"
+                        class="recurring_icon"
+                        title="Fast begivenhed"
+                      />
+                    </h2>
+                    <p class="event_info_box">
+                      {{ selectedEvent.beskrivelse }}
                     </p>
-                    <iframe
-                      :src="`https://open.spotify.com/embed/album/${selectedConcert.spotifyEmbed}`"
-                      width="100%"
-                      height="152"
-                      frameborder="0"
-                      loading="lazy"
-                      allow="autoplay; clipboard-write; encrypted-media"
-                    />
                   </div>
-                  <div class="concert_info">
+                  <div class="event_info">
                     <div class="infoText">
                       <p>Dato:</p>
-                      <p>{{ selectedConcert.date }}</p>
+                      <p>{{ selectedEvent.dato }}</p>
                     </div>
                     <div class="infoText">
-                      <p>Genre:</p>
-                      <p>{{ selectedConcert.genre }}</p>
-                    </div>
-                    <div class="infoText">
-                      <p>Koncert start:</p>
-                      <p>{{ selectedConcert.concertStart }}</p>
-                    </div>
-                    <div class="infoText">
-                      <p>Døre åbner:</p>
-                      <p>{{ selectedConcert.doorsOpen }}</p>
+                      <p>Tid:</p>
+                      <p>{{ selectedEvent.tid }}</p>
                     </div>
                     <div class="infoText">
                       <p>Venue:</p>
-                      <p>{{ selectedConcert.venue }}</p>
+                      <p>{{ selectedEvent.venue }}</p>
                     </div>
                     <div class="infoText">
                       <p>Pris:</p>
-                      <p>{{ selectedConcert.price }},-</p>
+                      <p>{{ selectedEvent.pris ? selectedEvent.pris + ',-' : 'Gratis' }}</p>
                     </div>
-                    <div class="button_wrapper">
-                      <button class="glass ticket_button">Køb billet</button>
+                    <div v-if="selectedEvent.billetLink" class="button_wrapper">
+                      <a :href="selectedEvent.billetLink" target="_blank" class="glass ticket_button">Køb billet</a>
                     </div>
                   </div>
                 </div>
               </div>
 
               <div class="modal_sidebar">
-                <h3>Andre {{ selectedConcert.genre }} koncerter</h3>
+                <h3>Andre begivenheder</h3>
                 <p
-                  v-if="otherConcerts.length === 0"
+                  v-if="otherEvents.length === 0"
                   style="color: white; font-size: 14px"
                 >
-                  Ingen andre {{ selectedConcert.genre }} koncerter
+                  Ingen andre kommende begivenheder
                 </p>
                 <div
-                  v-for="item in otherConcerts"
+                  v-for="item in otherEvents"
                   :key="item.id"
-                  class="sidebar_concert"
+                  class="sidebar_event"
                   @click="openModal(item)"
                 >
-                  <img :src="item.bandImage" />
+                  <img :src="item.billede" />
                   <div class="sidebar_overlay">
                     <span class="glass"
-                      >{{ item.bandName }}
+                      >{{ item.titel }}
                       <FontAwesomeIcon
                         :icon="faAngleRight"
                         class="sidebar_icon"
@@ -266,10 +347,11 @@
         </Transition>
       </Teleport>
 
+      <!-- SLIDER -->
       <Teleport to="body">
         <Transition name="modal">
           <div
-            v-if="sliderConcert"
+            v-if="sliderEvent"
             class="modal_backdrop"
             @click.self="closeSlider"
           >
@@ -283,7 +365,7 @@
               </button>
 
               <img
-                :src="sliderConcert.bandImages[sliderIndex]"
+                :src="sliderEvent.billeder[sliderIndex]"
                 class="slider_image"
               />
 
@@ -293,7 +375,7 @@
 
               <div class="slider_dots">
                 <span
-                  v-for="(_, i) in sliderConcert.bandImages"
+                  v-for="(_, i) in sliderEvent.billeder"
                   :key="i"
                   :class="['dot', { active: i === sliderIndex }]"
                   @click="sliderIndex = i"
@@ -308,6 +390,13 @@
 </template>
 
 <style scoped>
+.recurring_icon {
+  width: 16px;
+  height: 16px;
+  opacity: 0.7;
+  margin-left: 6px;
+}
+
 .mobile_infobox {
   padding: 30px;
   background-color: #5774b8;
@@ -331,7 +420,6 @@
   margin: 30px 0;
 }
 
-.filter_wrapper select,
 .filter_wrapper input,
 .filter_wrapper button {
   height: 50px;
@@ -354,31 +442,26 @@
   cursor: pointer;
 }
 
-#genre_selector {
-  color: white;
-  width: 150px;
-  font-size: 24px;
-  margin-top: 30px;
-}
-
-.concert {
+.event {
   margin-bottom: 30px;
   cursor: pointer;
   overflow: hidden;
   transition: transform 0.3s ease;
 }
 
-.band_name > p {
+.event_name > p {
   font-size: 24px;
   margin: 15px 0;
+  display: flex;
+  align-items: center;
 }
 
-.concert_button_wrapper {
+.event_button_wrapper {
   position: absolute;
   bottom: 10px;
   right: 10px;
 
-  .concert_button {
+  .event_button {
     width: 50px;
     height: 50px;
 
@@ -400,6 +483,7 @@
   align-items: center;
   z-index: 9999;
 }
+
 .modal_container {
   display: flex;
   gap: 15px;
@@ -425,7 +509,7 @@
   }
 }
 
-.sidebar_concert {
+.sidebar_event {
   position: relative;
   cursor: pointer;
   margin-bottom: 10px;
@@ -500,20 +584,19 @@
   z-index: 10;
 }
 
-.opened_modal_bandbox {
+.opened_modal_eventbox {
   display: flex;
   align-items: stretch;
 
-  .band_detail {
+  .event_detail {
     background-color: white;
     padding: 30px;
     flex: 1;
   }
 
-  .concert_info {
+  .event_info {
     padding: 30px;
     flex-direction: column;
-    /* justify-content: space-between; */
     height: auto;
     min-width: 300px;
     display: flex;
@@ -538,7 +621,7 @@
   transform: rotate(180deg);
 }
 
-.concert_image {
+.event_image {
   position: relative;
   overflow: hidden;
 
@@ -552,11 +635,11 @@
   }
 }
 
-.concert:hover .concert_image img {
+.event:hover .event_image img {
   transform: scale(1.1);
 }
 
-.concert_info {
+.event_info {
   display: flex;
   justify-content: space-evenly;
   align-items: center;
@@ -566,15 +649,16 @@
   height: 50px;
 }
 
-.concert_content {
+.event_content {
   overflow: hidden;
   transition:
     max-height 0.3s ease,
     padding 0.3s ease;
 }
 
-.band_info_box {
+.event_info_box {
   padding: 15px 0;
+  white-space: pre-line;
 }
 
 .button_wrapper {
@@ -587,6 +671,7 @@
   color: white;
   font-size: 18px;
   padding: 15px;
+  text-decoration: none;
 }
 
 .modal-enter-from,
@@ -642,7 +727,7 @@
   background: white;
 }
 
-.modal_band-gallery {
+.modal_event-gallery {
   position: absolute;
   bottom: 15px;
   right: 15px;
@@ -659,7 +744,6 @@
     flex-wrap: wrap;
   }
 
-  .filter_wrapper select,
   .filter_wrapper input,
   .filter_wrapper button {
     flex: 1;

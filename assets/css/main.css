@@ -540,20 +540,20 @@ img {
     font-size: 24px;
 }
 
-.concert_wrapper {
+.card_wrapper {
     display: grid;
     grid-template-columns: 1fr;
     gap: 30px;
 }
 
 @media (min-width: 992px) {
-    .concert_wrapper {
+    .card_wrapper {
         grid-template-columns: repeat(2, 1fr);
     }
 }
 
 @media (min-width: 1510px) {
-    .concert_wrapper {
+    .card_wrapper {
         grid-template-columns: repeat(3, 1fr);
     }
 }

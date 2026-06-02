@@ -148,7 +148,7 @@ const resetFilters = () => {
       </button>
     </div>
 
-    <div v-if="!isDesktop" class="concert_wrapper">
+    <div v-if="!isDesktop" class="card_wrapper">
       <div v-for="item in filteredConcert" :key="item.id" class="concert">
         <div class="band_name">
           <p>{{ item.bandName }}</p>
@@ -236,7 +236,7 @@ const resetFilters = () => {
       </div>
     </div>
 
-    <div v-if="isDesktop" class="concert_wrapper">
+    <div v-if="isDesktop" class="card_wrapper">
       <div
         v-for="item in filteredConcert"
         :key="item.id"

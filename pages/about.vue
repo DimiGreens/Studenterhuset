@@ -161,7 +161,7 @@ const heroImgUrl = computed(() => {
 })
 
 const { data: glassBox } = await useFetch("/api/contentful", {
-  query: { contentType: "heroGlassBox", include: 1, "fields.titel": "Glass box forside" },
+  query: { contentType: "heroGlassBox", include: 1, "fields.titel": "Glass box om studenterhuset" },
 });
 </script>
 <template>

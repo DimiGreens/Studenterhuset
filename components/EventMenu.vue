@@ -8,12 +8,12 @@ import {
   faExpand,
   faXmark,
   faRotate,
+  faBars,
 } from "@fortawesome/free-solid-svg-icons";
 
 import flatpickr from "flatpickr";
 import "flatpickr/dist/flatpickr.min.css";
 
-// Modtager faerdig-mappet data fra events.vue
 const props = defineProps({
   events: {
     type: Array,
@@ -23,18 +23,46 @@ const props = defineProps({
 
 const allEvents = computed(() => props.events);
 
+const filterOpen = ref(false);
 const dateInput = ref(null);
+const datePicker = ref(null);
 const selectedDate = ref(null);
+const selectedKategori = ref("all");
 const openId = ref(null);
 const contentRefs = ref({});
 const selectedEvent = ref(null);
 const sliderEvent = ref(null);
 const sliderIndex = ref(0);
-const windowWidth = ref(
-  typeof window !== "undefined" ? window.innerWidth : 1024,
+
+const priceRange = ref([0, 500]);
+const minPrice = ref(0);
+const maxPrice = ref(500);
+
+const availableKategorier = computed(() => {
+  const kategorier = props.events
+    .filter((e) => !e.fastBegivenhed)
+    .map((e) => e.kategori)
+    .filter(Boolean);
+  return [...new Set(kategorier)].sort();
+});
+
+const hasActiveFilters = computed(
+  () =>
+    selectedKategori.value !== "all" ||
+    selectedDate.value !== null ||
+    priceRange.value[0] !== minPrice.value ||
+    priceRange.value[1] !== maxPrice.value,
 );
 
-// Slider funktioner
+function clampMin() {
+  if (priceRange.value[0] > priceRange.value[1])
+    priceRange.value[0] = priceRange.value[1];
+}
+function clampMax() {
+  if (priceRange.value[1] < priceRange.value[0])
+    priceRange.value[1] = priceRange.value[0];
+}
+
 const openSlider = (item, startIndex = 0) => {
   sliderEvent.value = { ...item };
   sliderIndex.value = startIndex;
@@ -48,49 +76,91 @@ const nextSlide = () =>
   (sliderIndex.value =
     (sliderIndex.value + 1) % sliderEvent.value.billeder.length);
 
-// Accordion toggle (mobil)
 const toggle = (id) => {
   openId.value = openId.value === id ? null : id;
 };
 
-// Filtrering: kun fremtidige begivenheder + dato-filter
-const filteredEvents = computed(() => {
+const fasteBegivenheder = computed(() => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return allEvents.value.filter((item) => {
+    if (!item.fastBegivenhed) return false;
+    if (!item.dato) return false;
+    const [day, month, year] = item.dato.split("/");
+    return new Date(year, month - 1, day) >= today;
+  });
+});
+
+const enkeltBegivenheder = computed(() => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
   let result = allEvents.value.filter((item) => {
+    if (item.fastBegivenhed) return false;
     if (!item.dato) return false;
     const [day, month, year] = item.dato.split("/");
-    const eventDate = new Date(year, month - 1, day);
-    return eventDate >= today;
+    return new Date(year, month - 1, day) >= today;
   });
+
+  if (selectedKategori.value !== "all") {
+    result = result.filter((item) => item.kategori === selectedKategori.value);
+  }
 
   if (selectedDate.value) {
     result = result.filter((item) => item.dato === selectedDate.value);
   }
 
+  result = result.filter(
+    (item) =>
+      (item.pris ?? 0) >= priceRange.value[0] &&
+      (item.pris ?? 0) <= priceRange.value[1],
+  );
+
   return result;
 });
 
-// Opdel i faste og enkeltstaaende begivenheder
-const fasteBegivenheder = computed(() =>
-  filteredEvents.value.filter((item) => item.fastBegivenhed),
-);
-const enkeltBegivenheder = computed(() =>
-  filteredEvents.value.filter((item) => !item.fastBegivenhed),
-);
+onMounted(() => {
+  if (dateInput.value) {
+    const eventDates = new Set(
+      props.events.filter((e) => !e.fastBegivenhed).map((e) => e.dato),
+    );
 
-// Resize listener
-const onResize = () => (windowWidth.value = window.innerWidth);
-onMounted(() => window.addEventListener("resize", onResize));
+    datePicker.value = flatpickr(dateInput.value, {
+      dateFormat: "d/m/Y",
+      onChange: (selectedDates, dateStr) => {
+        selectedDate.value = dateStr;
+      },
+      onDayCreate: (dObj, dStr, fp, dayElem) => {
+        const d = dayElem.dateObj;
+        const day = String(d.getDate()).padStart(2, "0");
+        const month = String(d.getMonth() + 1).padStart(2, "0");
+        const year = d.getFullYear();
+        const formatted = `${day}/${month}/${year}`;
+
+        if (eventDates.has(formatted)) {
+          const dot = document.createElement("span");
+          dot.classList.add("event-dot");
+          dayElem.appendChild(dot);
+        }
+      },
+    });
+  }
+
+  const prices = props.events
+    .filter((e) => !e.fastBegivenhed)
+    .map((e) => e.pris)
+    .filter((p) => p != null);
+  if (prices.length) {
+    minPrice.value = 0;
+    maxPrice.value = Math.max(...prices);
+    priceRange.value = [minPrice.value, maxPrice.value];
+  }
+});
+
 onUnmounted(() => {
-  window.removeEventListener("resize", onResize);
   document.body.style.overflow = "";
 });
 
-const isDesktop = computed(() => windowWidth.value > 992);
-
-// Modal funktioner (desktop)
 const openModal = (item) => {
   selectedEvent.value = item;
   document.body.style.overflow = "hidden";
@@ -100,155 +170,46 @@ const closeModal = () => {
   document.body.style.overflow = "";
 };
 
-// Andre begivenheder i sidebar (ekskluder den valgte)
 const otherEvents = computed(() => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-
   return allEvents.value.filter((item) => {
     if (item.id === selectedEvent.value?.id) return false;
     if (!item.dato) return false;
-
     const [day, month, year] = item.dato.split("/");
-    const eventDate = new Date(year, month - 1, day);
-    return eventDate >= today;
-  });
-});
-
-// Dato-picker
-const datePicker = ref(null);
-
-onMounted(() => {
-  datePicker.value = flatpickr(dateInput.value, {
-    dateFormat: "d/m/Y",
-    onChange: (selectedDates, dateStr) => {
-      selectedDate.value = dateStr;
-    },
+    return new Date(year, month - 1, day) >= today;
   });
 });
 
 const resetFilters = () => {
+  selectedKategori.value = "all";
   selectedDate.value = null;
-  datePicker.value.clear();
+  datePicker.value?.clear();
+  priceRange.value = [minPrice.value, maxPrice.value];
 };
+
+function handleClick(item) {
+  if (window.innerWidth >= 993) {
+    openModal(item);
+  }
+}
 </script>
 
 <template>
   <div class="event-section container container--lg">
-    <div class="filter_wrapper">
-      <input ref="dateInput" class="glass" placeholder="Alle datoer" readonly />
-
-      <button
-        v-if="selectedDate"
-        class="glass reset_button"
-        @click="resetFilters"
-      >
-        Nulstil filter
-      </button>
-    </div>
-
-    <!-- FASTE BEGIVENHEDER -->
     <section v-if="fasteBegivenheder.length > 0" class="event_section_group">
       <h2 class="section_heading">Faste begivenheder</h2>
-
-      <!-- Mobil -->
-      <div v-if="!isDesktop" class="card_wrapper">
-        <div v-for="item in fasteBegivenheder" :key="item.id" class="event">
-          <div class="event_name">
-            <p>
-              {{ item.titel }}
-              <FontAwesomeIcon
-                :icon="faRotate"
-                class="recurring_icon"
-                title="Fast begivenhed"
-              />
-            </p>
-          </div>
-          <div class="event_image">
-            <img :src="item.billede" alt="" />
-            <div class="event_button_wrapper">
-              <button class="event_button glass" @click="toggle(item.id)">
-                <FontAwesomeIcon
-                  :icon="faAngleDown"
-                  :class="{ rotated: openId === item.id }"
-                />
-              </button>
-            </div>
-          </div>
-          <div class="event_info">
-            <p>{{ item.venue }}</p>
-            <p>{{ item.dato }}</p>
-            <p v-if="item.pris">{{ item.pris }},-</p>
-            <p v-else>Gratis</p>
-          </div>
-          <div
-            :ref="(el) => { if (el) contentRefs[item.id] = el; }"
-            class="event_content"
-            :style="
-              openId === item.id
-                ? { maxHeight: contentRefs[item.id]?.scrollHeight + 'px', paddingBottom: '20px' }
-                : { maxHeight: '0px', paddingBottom: '0px' }
-            "
-          >
-            <p class="event_info_box">{{ item.beskrivelse }}</p>
-            <div class="mobile_infobox">
-              <div class="infoText"><p>Dato:</p><p>{{ item.dato }}</p></div>
-              <div class="infoText"><p>Tid:</p><p>{{ item.tid }}</p></div>
-              <div class="infoText"><p>Venue:</p><p>{{ item.venue }}</p></div>
-              <div class="infoText"><p>Pris:</p><p>{{ item.pris ? item.pris + ',-' : 'Gratis' }}</p></div>
-              <div v-if="item.billetLink" class="button_wrapper">
-                <a :href="item.billetLink" target="_blank" class="glass ticket_button">Køb billet</a>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Desktop -->
-      <div v-if="isDesktop" class="card_wrapper">
+      <div class="card_wrapper">
         <div
           v-for="item in fasteBegivenheder"
           :key="item.id"
           class="event"
-          @click="openModal(item)"
+          @click="handleClick(item)"
         >
-          <div class="event_name">
-            <p>
-              {{ item.titel }}
-              <FontAwesomeIcon
-                :icon="faRotate"
-                class="recurring_icon"
-                title="Fast begivenhed"
-              />
-            </p>
-          </div>
-          <div class="event_image">
-            <img :src="item.billede" alt="" />
-          </div>
-          <div class="event_info">
-            <p>{{ item.venue }}</p>
-            <p>{{ item.dato }}</p>
-            <p v-if="item.pris">{{ item.pris }},-</p>
-            <p v-else>Gratis</p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ØVRIGE BEGIVENHEDER -->
-    <section v-if="enkeltBegivenheder.length > 0" class="event_section_group">
-      <h2 class="section_heading">Kommende begivenheder</h2>
-
-      <!-- Mobil -->
-      <div v-if="!isDesktop" class="card_wrapper">
-        <div v-for="item in enkeltBegivenheder" :key="item.id" class="event">
-          <div class="event_name">
-            <p>{{ item.titel }}</p>
-          </div>
           <div class="event_image">
             <img :src="item.billede" alt="" />
             <div class="event_button_wrapper">
-              <button class="event_button glass" @click="toggle(item.id)">
+              <button class="event_button glass" @click.stop="toggle(item.id)">
                 <FontAwesomeIcon
                   :icon="faAngleDown"
                   :class="{ rotated: openId === item.id }"
@@ -256,60 +217,210 @@ const resetFilters = () => {
               </button>
             </div>
           </div>
+
           <div class="event_info">
-            <p>{{ item.venue }}</p>
-            <p>{{ item.dato }}</p>
-            <p v-if="item.pris">{{ item.pris }},-</p>
-            <p v-else>Gratis</p>
+            <p class="event_cardName">{{ item.titel }}</p>
+            <div class="event_dateAndPrice" v-show="openId !== item.id">
+              <p class="event_cardDate">{{ item.dato }}</p>
+              <p class="event_cardPrice">
+                {{ item.pris ? item.pris + ",-" : "Gratis" }}
+              </p>
+            </div>
           </div>
+
           <div
-            :ref="(el) => { if (el) contentRefs[item.id] = el; }"
+            :ref="
+              (el) => {
+                if (el) contentRefs[item.id] = el;
+              }
+            "
             class="event_content"
             :style="
               openId === item.id
-                ? { maxHeight: contentRefs[item.id]?.scrollHeight + 'px', paddingBottom: '20px' }
+                ? {
+                    maxHeight: contentRefs[item.id]?.scrollHeight + 'px',
+                    paddingBottom: '20px',
+                  }
                 : { maxHeight: '0px', paddingBottom: '0px' }
             "
           >
-            <p class="event_info_box">{{ item.beskrivelse }}</p>
             <div class="mobile_infobox">
-              <div class="infoText"><p>Dato:</p><p>{{ item.dato }}</p></div>
-              <div class="infoText"><p>Tid:</p><p>{{ item.tid }}</p></div>
-              <div class="infoText"><p>Venue:</p><p>{{ item.venue }}</p></div>
-              <div class="infoText"><p>Pris:</p><p>{{ item.pris ? item.pris + ',-' : 'Gratis' }}</p></div>
-              <div v-if="item.billetLink" class="button_wrapper">
-                <a :href="item.billetLink" target="_blank" class="glass ticket_button">Køb billet</a>
+              <div class="infoText">
+                <p>Dato:</p>
+                <p>{{ item.dato }}</p>
+              </div>
+              <div class="infoText">
+                <p>Tid:</p>
+                <p>{{ item.tid }}</p>
+              </div>
+              <div class="infoText">
+                <p>Venue:</p>
+                <p>{{ item.venue }}</p>
+              </div>
+              <div class="infoText">
+                <p>Pris:</p>
+                <p>{{ item.pris ? item.pris + ",-" : "Gratis" }}</p>
               </div>
             </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Desktop -->
-      <div v-if="isDesktop" class="card_wrapper">
-        <div
-          v-for="item in enkeltBegivenheder"
-          :key="item.id"
-          class="event"
-          @click="openModal(item)"
-        >
-          <div class="event_name">
-            <p>{{ item.titel }}</p>
-          </div>
-          <div class="event_image">
-            <img :src="item.billede" alt="" />
-          </div>
-          <div class="event_info">
-            <p>{{ item.venue }}</p>
-            <p>{{ item.dato }}</p>
-            <p v-if="item.pris">{{ item.pris }},-</p>
-            <p v-else>Gratis</p>
+            <p class="event_info_box">{{ item.beskrivelse }}</p>
+            <div v-if="item.billetLink" class="button_wrapper">
+              <a
+                :href="item.billetLink"
+                target="_blank"
+                class="glass ticket_button"
+                >Køb billet</a
+              >
+            </div>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- MODAL (delt af begge sektioner) -->
+    <section class="event_section_group">
+      <h2 class="section_heading">Kommende begivenheder</h2>
+
+      <button class="filter_toggle glass" @click="filterOpen = !filterOpen">
+        <span>Filter</span>
+        <FontAwesomeIcon :icon="filterOpen ? faXmark : faBars" />
+      </button>
+
+      <div class="filter_panel glass" :class="{ open: filterOpen }">
+        <div class="filter_panel_header">
+          <p>Filter</p>
+          <button class="filter_close glass" @click="filterOpen = false">
+            <FontAwesomeIcon :icon="faXmark" />
+          </button>
+        </div>
+
+        <select v-model="selectedKategori" class="filter_select glass">
+          <option value="all">Alle kategorier</option>
+          <option v-for="kat in availableKategorier" :key="kat" :value="kat">
+            {{ kat }}
+          </option>
+        </select>
+
+        <input
+          ref="dateInput"
+          class="filter_select glass"
+          placeholder="Alle datoer"
+          readonly
+        />
+
+        <div class="price_slider">
+          <p class="price_label">
+            {{ priceRange[0] }},- – {{ priceRange[1] }},-
+          </p>
+          <div class="range_track">
+            <input
+              type="range"
+              :min="minPrice"
+              :max="maxPrice"
+              v-model.number="priceRange[0]"
+              @input="clampMin"
+            />
+            <input
+              type="range"
+              :min="minPrice"
+              :max="maxPrice"
+              v-model.number="priceRange[1]"
+              @input="clampMax"
+            />
+          </div>
+        </div>
+
+        <button
+          v-if="hasActiveFilters"
+          class="glass reset_button"
+          @click="resetFilters"
+        >
+          Nulstil filtre
+        </button>
+      </div>
+
+      <div class="card_wrapper">
+        <div
+          v-for="item in enkeltBegivenheder"
+          :key="item.id"
+          class="event"
+          @click="handleClick(item)"
+        >
+          <div class="event_image">
+            <img :src="item.billede" alt="" />
+            <span v-if="item.kategori" class="event_tag">{{
+              item.kategori
+            }}</span>
+            <div class="event_button_wrapper">
+              <button class="event_button glass" @click.stop="toggle(item.id)">
+                <FontAwesomeIcon
+                  :icon="faAngleDown"
+                  :class="{ rotated: openId === item.id }"
+                />
+              </button>
+            </div>
+          </div>
+
+          <div class="event_info">
+            <p class="event_cardName">{{ item.titel }}</p>
+            <div class="event_dateAndPrice" v-show="openId !== item.id">
+              <p class="event_cardDate">{{ item.dato }}</p>
+              <p class="event_cardPrice">
+                {{ item.pris ? item.pris + ",-" : "Gratis" }}
+              </p>
+            </div>
+          </div>
+
+          <div
+            :ref="
+              (el) => {
+                if (el) contentRefs[item.id] = el;
+              }
+            "
+            class="event_content"
+            :style="
+              openId === item.id
+                ? {
+                    maxHeight: contentRefs[item.id]?.scrollHeight + 'px',
+                    paddingBottom: '20px',
+                  }
+                : { maxHeight: '0px', paddingBottom: '0px' }
+            "
+          >
+            <div class="mobile_infobox">
+              <div class="infoText">
+                <p>Dato:</p>
+                <p>{{ item.dato }}</p>
+              </div>
+              <div class="infoText">
+                <p>Tid:</p>
+                <p>{{ item.tid }}</p>
+              </div>
+              <div class="infoText">
+                <p>Venue:</p>
+                <p>{{ item.venue }}</p>
+              </div>
+              <div class="infoText">
+                <p>Pris:</p>
+                <p>{{ item.pris ? item.pris + ",-" : "Gratis" }}</p>
+              </div>
+            </div>
+            <p class="event_info_box">{{ item.beskrivelse }}</p>
+            <div v-if="item.billetLink" class="button_wrapper">
+              <a
+                :href="item.billetLink"
+                target="_blank"
+                class="glass ticket_button"
+                >Køb billet</a
+              >
+            </div>
+          </div>
+        </div>
+
+        <p v-if="enkeltBegivenheder.length === 0" class="no_results">
+          Ingen begivenheder matcher dine filtre.
+        </p>
+      </div>
+    </section>
+
     <Teleport to="body">
       <Transition name="modal">
         <div
@@ -324,17 +435,13 @@ const resetFilters = () => {
                   <FontAwesomeIcon :icon="faXmark" />
                 </button>
                 <button
-                  v-if="selectedEvent.billeder.length > 1"
+                  v-if="selectedEvent.billeder?.length > 1"
                   class="modal_event-gallery glass"
                   @click.stop="openSlider(selectedEvent, 0)"
                 >
                   <FontAwesomeIcon :icon="faExpand" />
                 </button>
-                <img
-                  :src="selectedEvent.billede"
-                  alt=""
-                  class="modal_image"
-                />
+                <img :src="selectedEvent.billede" alt="" class="modal_image" />
               </div>
               <div class="opened_modal_eventbox">
                 <div class="event_detail">
@@ -347,11 +454,9 @@ const resetFilters = () => {
                       title="Fast begivenhed"
                     />
                   </h2>
-                  <p class="event_info_box">
-                    {{ selectedEvent.beskrivelse }}
-                  </p>
+                  <p class="event_info_box">{{ selectedEvent.beskrivelse }}</p>
                 </div>
-                <div class="event_info">
+                <div class="event_info modal_info">
                   <div class="infoText">
                     <p>Dato:</p>
                     <p>{{ selectedEvent.dato }}</p>
@@ -366,10 +471,21 @@ const resetFilters = () => {
                   </div>
                   <div class="infoText">
                     <p>Pris:</p>
-                    <p>{{ selectedEvent.pris ? selectedEvent.pris + ',-' : 'Gratis' }}</p>
+                    <p>
+                      {{
+                        selectedEvent.pris
+                          ? selectedEvent.pris + ",-"
+                          : "Gratis"
+                      }}
+                    </p>
                   </div>
                   <div v-if="selectedEvent.billetLink" class="button_wrapper">
-                    <a :href="selectedEvent.billetLink" target="_blank" class="glass ticket_button">Køb billet</a>
+                    <a
+                      :href="selectedEvent.billetLink"
+                      target="_blank"
+                      class="glass ticket_button"
+                      >Køb billet</a
+                    >
                   </div>
                 </div>
               </div>
@@ -391,12 +507,13 @@ const resetFilters = () => {
               >
                 <img :src="item.billede" />
                 <div class="sidebar_overlay">
-                  <span class="glass"
-                    >{{ item.titel }}
+                  <span class="glass">
+                    {{ item.titel }}
                     <FontAwesomeIcon
                       :icon="faAngleRight"
                       class="sidebar_icon"
-                  /></span>
+                    />
+                  </span>
                 </div>
               </div>
             </div>
@@ -405,7 +522,6 @@ const resetFilters = () => {
       </Transition>
     </Teleport>
 
-    <!-- SLIDER (delt af begge sektioner) -->
     <Teleport to="body">
       <Transition name="modal">
         <div
@@ -417,20 +533,16 @@ const resetFilters = () => {
             <button class="modal_close glass" @click="closeSlider">
               <FontAwesomeIcon :icon="faXmark" />
             </button>
-
             <button class="slider_arrow left glass" @click="prevSlide">
               <FontAwesomeIcon :icon="faAngleLeft" />
             </button>
-
             <img
               :src="sliderEvent.billeder[sliderIndex]"
               class="slider_image"
             />
-
             <button class="slider_arrow right glass" @click="nextSlide">
               <FontAwesomeIcon :icon="faAngleRight" />
             </button>
-
             <div class="slider_dots">
               <span
                 v-for="(_, i) in sliderEvent.billeder"
@@ -447,95 +559,385 @@ const resetFilters = () => {
 </template>
 
 <style scoped>
-.event_section_group {
-  margin-bottom: 40px;
+.event {
+  background: white;
+  border-radius: 16px;
+  overflow: hidden;
+  cursor: pointer;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
 }
 
-.section_heading {
-  margin-bottom: 10px;
+.event:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+}
+
+.event_image {
+  position: relative;
+  overflow: hidden;
+}
+
+.event_image img {
+  width: 100%;
+  height: 250px;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+  transition: transform 0.3s ease;
+}
+
+.event:hover .event_image img {
+  transform: scale(1.05);
+}
+
+.event_tag {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: rgba(176, 192, 235, 0.7);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 100px;
+  padding: 4px 14px;
+  font-size: 14px;
+  color: #111;
+  font-family: "Barlow Condensed", sans-serif;
 }
 
 .recurring_icon {
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
   opacity: 0.7;
-  margin-left: 6px;
+}
+
+.event_button_wrapper {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+}
+
+.event_button {
+  width: 48px;
+  height: 48px;
+  background: #5774b8 !important;
+  border-radius: 50%;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  svg {
+    color: white;
+    width: 20px;
+    height: 20px;
+    transition: transform 0.3s ease;
+  }
+}
+
+.rotated {
+  transform: rotate(180deg);
+}
+
+.event_info {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 15px;
+  background: #eeeeff;
+
+  .event_cardName {
+    color: #0b1071;
+    font-family: "Barlow Condensed", sans-serif;
+    font-size: 32px;
+    font-weight: bold;
+  }
+
+  .event_dateAndPrice {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-top: 15px;
+
+    .event_cardDate {
+      font-family: "Barlow Condensed", sans-serif;
+      color: #535353;
+      font-size: 16px;
+    }
+
+    .event_cardPrice {
+      font-family: "Barlow Condensed", sans-serif;
+      font-size: 20px;
+      color: #535353;
+      font-weight: 600;
+    }
+  }
+}
+
+.event_content {
+  overflow: hidden;
+  transition:
+    max-height 0.3s ease,
+    padding 0.3s ease;
+  background-color: #eeeeff;
+  padding: 0 20px;
 }
 
 .mobile_infobox {
-  padding: 30px;
-  background-color: #5774b8;
-  border-radius: 8px;
-
-  .button_wrapper {
-    width: 100%;
-    justify-content: center;
-    margin: 0 auto;
-  }
+  background-color: #eeeeff;
+  row-gap: 10px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
 
   p {
+    color: #111;
+  }
+}
+
+.infoText {
+  width: 100%;
+  margin-bottom: 10px;
+
+  p:first-child {
+    font-size: 13px;
+    font-weight: 700;
+    color: #5774b8;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-family: "Barlow Condensed", sans-serif;
+  }
+
+  p:last-child {
+    font-size: 18px;
+    font-weight: 500;
+    color: #111;
+    font-family: "Barlow Condensed", sans-serif;
+  }
+}
+
+.event_info_box {
+  font-family: "Inter", sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+  color: #333;
+  padding: 15px 0;
+  white-space: pre-line;
+}
+
+.ticket_button {
+  background: #5774b8;
+  color: white;
+  font-size: 18px;
+  padding: 12px 24px;
+  border-radius: 100px;
+  border: none;
+  cursor: pointer;
+  font-family: "Barlow Condensed", sans-serif;
+  margin-top: 8px;
+  margin-bottom: 16px;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.button_wrapper {
+  display: flex;
+  justify-content: center;
+}
+
+.no_results {
+  color: white;
+  font-family: "Barlow Condensed", sans-serif;
+  font-size: 20px;
+  padding: 20px 0;
+}
+
+.filter_toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 50px;
+  padding: 0 24px;
+  font-size: 20px;
+  color: white;
+  font-family: "Barlow Condensed", sans-serif;
+  cursor: pointer;
+  border: none;
+  margin: 20px 0;
+
+  svg {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+.filter_panel {
+  display: none;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px;
+  margin-bottom: 24px;
+  border-radius: 16px;
+}
+
+.filter_panel.open {
+  display: flex;
+}
+
+.filter_panel_header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  p {
+    font-size: 24px;
+    font-family: "Barlow Condensed", sans-serif;
     color: white;
   }
 }
 
-.filter_wrapper {
+.filter_close {
+  width: 44px;
+  height: 44px;
+  color: white;
+  font-size: 18px;
+  cursor: pointer;
+  border: none;
   display: flex;
   align-items: center;
-  gap: 15px;
-  margin: 30px 0;
+  justify-content: center;
+
+  svg {
+    width: 20px;
+    height: 20px;
+  }
 }
 
-.filter_wrapper input,
-.filter_wrapper button {
-  height: 50px;
+.filter_select {
+  width: 100%;
+  height: 56px;
   font-size: 20px;
   color: white;
   padding: 0 20px;
   cursor: pointer;
   border: none;
   outline: none;
+  font-family: "Barlow Condensed", sans-serif;
+  background: rgba(87, 116, 184, 0.6);
 }
 
-.filter_wrapper input.glass {
-  overflow: visible;
+.price_label {
+  color: white;
+  font-size: 18px;
+  font-family: "Barlow Condensed", sans-serif;
+  margin-bottom: 8px;
 }
 
 .reset_button {
-  color: white;
-  font-size: 20px;
+  height: 50px;
   padding: 0 20px;
+  color: white;
+  font-size: 18px;
+  font-family: "Barlow Condensed", sans-serif;
   cursor: pointer;
+  border: none;
 }
 
-.event {
-  margin-bottom: 30px;
-  cursor: pointer;
-  overflow: hidden;
-  transition: transform 0.3s ease;
+.range_track {
+  position: relative;
+  height: 2rem;
 }
 
-.event_name > p {
-  font-size: 24px;
-  margin: 15px 0;
-  display: flex;
-  align-items: center;
-}
-
-.event_button_wrapper {
+.range_track input[type="range"] {
   position: absolute;
-  bottom: 10px;
-  right: 10px;
+  width: 100%;
+  pointer-events: none;
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  top: 50%;
+  transform: translateY(-50%);
+}
 
-  .event_button {
-    width: 50px;
+.range_track input[type="range"]::-webkit-slider-thumb {
+  pointer-events: all;
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: white;
+  cursor: pointer;
+  margin-top: -8px;
+  border: 3px solid #5774b8;
+}
+
+.range_track input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 2px;
+}
+
+.range_track input[type="range"]::-moz-range-track {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 2px;
+}
+
+.event_section_group {
+  margin-bottom: 40px;
+}
+
+.section_heading {
+  color: white;
+  font-family: "Barlow Condensed", sans-serif;
+  font-size: 28px;
+  margin-bottom: 16px;
+}
+
+@media (min-width: 993px) {
+  .filter_toggle {
+    display: none;
+  }
+
+  .filter_panel {
+    display: flex !important;
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+    border-radius: 100px;
+    padding: 12px 24px;
+    gap: 20px;
+    margin-bottom: 30px;
+  }
+
+  .filter_panel_header {
+    display: none;
+  }
+
+  .filter_select {
+    width: auto;
+    min-width: 180px;
     height: 50px;
+  }
 
-    svg {
-      width: 35px;
-      height: 35px;
-      color: white;
-      transition: transform 0.3s ease;
-    }
+  .price_slider {
+    min-width: 220px;
+  }
+
+  .event_button_wrapper {
+    display: none;
+  }
+
+  .event_content {
+    max-height: 0 !important;
+    overflow: visible !important;
+    padding: 0 20px 20px !important;
+    display: none;
+  }
+
+  .event_dateAndPrice {
+    display: flex !important;
   }
 }
 
@@ -617,7 +1019,6 @@ const resetFilters = () => {
   &:hover span {
     gap: 6px;
   }
-
   &:hover .sidebar_icon {
     max-width: 14px;
     opacity: 1;
@@ -659,7 +1060,7 @@ const resetFilters = () => {
     flex: 1;
   }
 
-  .event_info {
+  .modal_info {
     padding: 30px;
     flex-direction: column;
     height: auto;
@@ -667,76 +1068,15 @@ const resetFilters = () => {
     display: flex;
     justify-content: flex-start;
     align-items: flex-start;
+    background: #eeeeff;
+    max-height: none !important;
+    overflow: visible !important;
 
     .button_wrapper {
       width: 100%;
       justify-content: center;
     }
   }
-}
-
-.infoText {
-  width: 100%;
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  margin-bottom: 15px;
-}
-
-.rotated {
-  transform: rotate(180deg);
-}
-
-.event_image {
-  position: relative;
-  overflow: hidden;
-
-  img {
-    width: 100%;
-    height: 250px;
-    object-position: center;
-    object-fit: cover;
-    transition: transform 0.3s ease;
-    display: block;
-  }
-}
-
-.event:hover .event_image img {
-  transform: scale(1.1);
-}
-
-.event_info {
-  display: flex;
-  justify-content: space-evenly;
-  align-items: center;
-  font-size: 18px;
-  color: white;
-  background-color: #5774b8;
-  height: 50px;
-}
-
-.event_content {
-  overflow: hidden;
-  transition:
-    max-height 0.3s ease,
-    padding 0.3s ease;
-}
-
-.event_info_box {
-  padding: 15px 0;
-  white-space: pre-line;
-}
-
-.button_wrapper {
-  margin-top: 15px;
-  display: flex;
-  justify-content: flex-end;
-}
-
-.ticket_button {
-  color: white;
-  font-size: 18px;
-  padding: 15px;
-  text-decoration: none;
 }
 
 .modal-enter-from,
@@ -747,6 +1087,18 @@ const resetFilters = () => {
 .modal-enter-active,
 .modal-leave-active {
   transition: all 0.2s ease;
+}
+
+.modal_event-gallery {
+  position: absolute;
+  bottom: 15px;
+  right: 15px;
+  width: 40px;
+  height: 40px;
+  color: white;
+  font-size: 18px;
+  cursor: pointer;
+  z-index: 10;
 }
 
 .slider_container {
@@ -790,29 +1142,5 @@ const resetFilters = () => {
 
 .dot.active {
   background: white;
-}
-
-.modal_event-gallery {
-  position: absolute;
-  bottom: 15px;
-  right: 15px;
-  width: 40px;
-  height: 40px;
-  color: white;
-  font-size: 18px;
-  cursor: pointer;
-  z-index: 10;
-}
-
-@media (max-width: 992px) {
-  .filter_wrapper {
-    flex-wrap: wrap;
-  }
-
-  .filter_wrapper input,
-  .filter_wrapper button {
-    flex: 1;
-    min-width: 140px;
-  }
 }
 </style>

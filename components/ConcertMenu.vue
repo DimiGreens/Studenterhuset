@@ -109,10 +109,36 @@ const filteredConcert = computed(() => {
 
 onMounted(() => {
   if (dateInput.value) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const concertDates = new Set(
+      props.concert
+        .filter((c) => {
+          if (!c.date) return false;
+          const [day, month, year] = c.date.split("/");
+          return new Date(year, month - 1, day) >= today;
+        })
+        .map((c) => c.date),
+    );
+
     datePicker.value = flatpickr(dateInput.value, {
       dateFormat: "d/m/Y",
       onChange: (selectedDates, dateStr) => {
         selectedDate.value = dateStr;
+      },
+      onDayCreate: (dObj, dStr, fp, dayElem) => {
+        const d = dayElem.dateObj;
+        const day = String(d.getDate()).padStart(2, "0");
+        const month = String(d.getMonth() + 1).padStart(2, "0");
+        const year = d.getFullYear();
+        const formatted = `${day}/${month}/${year}`;
+
+        if (concertDates.has(formatted)) {
+          const dot = document.createElement("span");
+          dot.classList.add("event-dot");
+          dayElem.appendChild(dot);
+        }
       },
     });
   }
@@ -167,14 +193,13 @@ function toSpotifyEmbed(url) {
 
 function handleClick(item) {
   if (window.innerWidth >= 993) {
-    openModal(item)
+    openModal(item);
   }
 }
 </script>
 
 <template>
   <div class="concert-section container container--lg">
-
     <button class="filter_toggle glass" @click="filterOpen = !filterOpen">
       <span>Filter</span>
       <FontAwesomeIcon :icon="filterOpen ? faXmark : faBars" />
@@ -195,17 +220,38 @@ function handleClick(item) {
         </option>
       </select>
 
-      <input ref="dateInput" class="filter_select glass" placeholder="Alle datoer" readonly />
+      <input
+        ref="dateInput"
+        class="filter_select glass"
+        placeholder="Alle datoer"
+        readonly
+      />
 
       <div class="price_slider">
         <p class="price_label">{{ priceRange[0] }},- – {{ priceRange[1] }},-</p>
         <div class="range_track">
-          <input type="range" :min="minPrice" :max="maxPrice" v-model.number="priceRange[0]" @input="clampMin" />
-          <input type="range" :min="minPrice" :max="maxPrice" v-model.number="priceRange[1]" @input="clampMax" />
+          <input
+            type="range"
+            :min="minPrice"
+            :max="maxPrice"
+            v-model.number="priceRange[0]"
+            @input="clampMin"
+          />
+          <input
+            type="range"
+            :min="minPrice"
+            :max="maxPrice"
+            v-model.number="priceRange[1]"
+            @input="clampMax"
+          />
         </div>
       </div>
 
-      <button v-if="hasActiveFilters" class="glass reset_button" @click="resetFilters">
+      <button
+        v-if="hasActiveFilters"
+        class="glass reset_button"
+        @click="resetFilters"
+      >
         Nulstil filtre
       </button>
     </div>
@@ -239,11 +285,18 @@ function handleClick(item) {
         </div>
 
         <div
-          :ref="(el) => { if (el) contentRefs[item.id] = el }"
+          :ref="
+            (el) => {
+              if (el) contentRefs[item.id] = el;
+            }
+          "
           class="concert_content"
           :style="
             openId === item.id
-              ? { maxHeight: contentRefs[item.id]?.scrollHeight + 'px', paddingBottom: '20px' }
+              ? {
+                  maxHeight: contentRefs[item.id]?.scrollHeight + 'px',
+                  paddingBottom: '20px',
+                }
               : { maxHeight: '0px', paddingBottom: '0px' }
           "
         >
@@ -309,12 +362,18 @@ function handleClick(item) {
                 >
                   <FontAwesomeIcon :icon="faExpand" />
                 </button>
-                <img :src="selectedConcert.bandImage" alt="" class="modal_image" />
+                <img
+                  :src="selectedConcert.bandImage"
+                  alt=""
+                  class="modal_image"
+                />
               </div>
               <div class="opened_modal_bandbox">
                 <div class="band_detail">
                   <h2>{{ selectedConcert.bandName }}</h2>
-                  <p class="band_info_box">{{ selectedConcert.bandDescription }}</p>
+                  <p class="band_info_box">
+                    {{ selectedConcert.bandDescription }}
+                  </p>
                   <iframe
                     v-if="selectedConcert.spotifyEmbed"
                     :src="toSpotifyEmbed(selectedConcert.spotifyEmbed)"
@@ -359,7 +418,10 @@ function handleClick(item) {
 
             <div class="modal_sidebar">
               <h3>Andre {{ selectedConcert.genre }} koncerter</h3>
-              <p v-if="otherConcerts.length === 0" style="color: white; font-size: 14px">
+              <p
+                v-if="otherConcerts.length === 0"
+                style="color: white; font-size: 14px"
+              >
                 Ingen andre {{ selectedConcert.genre }} koncerter
               </p>
               <div
@@ -372,7 +434,10 @@ function handleClick(item) {
                 <div class="sidebar_overlay">
                   <span class="glass">
                     {{ item.bandName }}
-                    <FontAwesomeIcon :icon="faAngleRight" class="sidebar_icon" />
+                    <FontAwesomeIcon
+                      :icon="faAngleRight"
+                      class="sidebar_icon"
+                    />
                   </span>
                 </div>
               </div>
@@ -396,7 +461,10 @@ function handleClick(item) {
             <button class="slider_arrow left glass" @click="prevSlide">
               <FontAwesomeIcon :icon="faAngleLeft" />
             </button>
-            <img :src="sliderConcert.bandImages[sliderIndex]" class="slider_image" />
+            <img
+              :src="sliderConcert.bandImages[sliderIndex]"
+              class="slider_image"
+            />
             <button class="slider_arrow right glass" @click="nextSlide">
               <FontAwesomeIcon :icon="faAngleRight" />
             </button>
@@ -412,7 +480,6 @@ function handleClick(item) {
         </div>
       </Transition>
     </Teleport>
-
   </div>
 </template>
 
@@ -422,7 +489,9 @@ function handleClick(item) {
   border-radius: 16px;
   overflow: hidden;
   cursor: pointer;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
 }
 
@@ -528,7 +597,9 @@ function handleClick(item) {
 
 .concert_content {
   overflow: hidden;
-  transition: max-height 0.3s ease, padding 0.3s ease;
+  transition:
+    max-height 0.3s ease,
+    padding 0.3s ease;
   background-color: #eeeeff;
   padding: 0 20px;
 }
@@ -539,7 +610,9 @@ function handleClick(item) {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
 
-  p { color: #111; }
+  p {
+    color: #111;
+  }
 }
 
 .infoText {
@@ -840,11 +913,18 @@ function handleClick(item) {
     max-width: 0;
     opacity: 0;
     overflow: hidden;
-    transition: max-width 0.2s ease, opacity 0.2s ease;
+    transition:
+      max-width 0.2s ease,
+      opacity 0.2s ease;
   }
 
-  &:hover span { gap: 6px; }
-  &:hover .sidebar_icon { max-width: 14px; opacity: 1; }
+  &:hover span {
+    gap: 6px;
+  }
+  &:hover .sidebar_icon {
+    max-width: 14px;
+    opacity: 1;
+  }
 }
 
 .modal_image {

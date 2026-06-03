@@ -173,6 +173,33 @@ p {
 }
 
 /* =========================
+   CALENDER STYLING
+========================= */
+
+.flatpickr-day {
+    position: relative;
+}
+
+.event-dot {
+    position: absolute;
+    bottom: 3px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background-color: #5774b8;
+    display: block;
+    pointer-events: none;
+}
+
+/* Sørg for at prikken er hvid når dagen er valgt eller i dag */
+.flatpickr-day.selected .event-dot,
+.flatpickr-day.today .event-dot {
+    background-color: white;
+}
+
+/* =========================
    LAYOUT SYSTEM (IMPORTANT)
 ========================= */
 

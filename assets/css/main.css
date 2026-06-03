@@ -55,13 +55,13 @@ html{
 } */
 
 @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@100;200;300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
 
 /* =========================
    RESET
 ========================= */
 
 * {
-    font-family: "Barlow Condensed", sans-serif;
     margin: 0;
     padding: 0;
     box-sizing: border-box;
@@ -74,6 +74,19 @@ html {
 body {
     color: #111;
     line-height: 1.4;
+    background: linear-gradient(to right, #B0C0EB 0%, #DEE2F8 50%, #B0C0EB 100%);
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: "Barlow Condensed", sans-serif;
+}
+
+.font-style-heading {
+    font-family: "Barlow Condensed", sans-serif;
+}
+
+p {
+    font-family: "Inter", sans-serif;
 }
 
 /* =========================

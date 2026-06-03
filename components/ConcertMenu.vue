@@ -1,12 +1,14 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from "vue";
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
+
 import {
   faAngleDown,
   faAngleRight,
   faAngleLeft,
   faExpand,
   faXmark,
+  faBars,
 } from "@fortawesome/free-solid-svg-icons";
 
 import flatpickr from "flatpickr";
@@ -21,7 +23,9 @@ const props = defineProps({
 
 const concerts = computed(() => props.concert);
 
+const filterOpen = ref(false);
 const dateInput = ref(null);
+const datePicker = ref(null);
 const selectedDate = ref(null);
 const openId = ref(null);
 const contentRefs = ref({});
@@ -29,9 +33,6 @@ const selectedGenre = ref("all");
 const selectedConcert = ref(null);
 const sliderConcert = ref(null);
 const sliderIndex = ref(0);
-const windowWidth = ref(
-  typeof window !== "undefined" ? window.innerWidth : 1024,
-);
 
 const priceRange = ref([0, 500]);
 const minPrice = ref(0);
@@ -106,14 +107,27 @@ const filteredConcert = computed(() => {
   return result;
 });
 
-const onResize = () => (windowWidth.value = window.innerWidth);
-onMounted(() => window.addEventListener("resize", onResize));
-onUnmounted(() => {
-  window.removeEventListener("resize", onResize);
-  document.body.style.overflow = "";
+onMounted(() => {
+  if (dateInput.value) {
+    datePicker.value = flatpickr(dateInput.value, {
+      dateFormat: "d/m/Y",
+      onChange: (selectedDates, dateStr) => {
+        selectedDate.value = dateStr;
+      },
+    });
+  }
+
+  const prices = props.concert.map((c) => c.price).filter((p) => p != null);
+  if (prices.length) {
+    minPrice.value = Math.min(...prices);
+    maxPrice.value = Math.max(...prices);
+    priceRange.value = [minPrice.value, maxPrice.value];
+  }
 });
 
-const isDesktop = computed(() => windowWidth.value > 992);
+onUnmounted(() => {
+  document.body.style.overflow = "";
+});
 
 const openModal = (item) => {
   selectedConcert.value = item;
@@ -139,91 +153,69 @@ const otherConcerts = computed(() => {
   });
 });
 
-const datePicker = ref(null);
-
-onMounted(() => {
-  datePicker.value = flatpickr(dateInput.value, {
-    dateFormat: "d/m/Y",
-    onChange: (selectedDates, dateStr) => {
-      selectedDate.value = dateStr;
-    },
-  });
-
-  const prices = props.concert.map((c) => c.price).filter((p) => p != null);
-  if (prices.length) {
-    minPrice.value = Math.min(...prices);
-    maxPrice.value = Math.max(...prices);
-    priceRange.value = [minPrice.value, maxPrice.value];
-  }
-});
-
 const resetFilters = () => {
   selectedGenre.value = "all";
   selectedDate.value = null;
-  datePicker.value.clear();
+  datePicker.value?.clear();
   priceRange.value = [minPrice.value, maxPrice.value];
 };
 
 function toSpotifyEmbed(url) {
-  if (!url) return null
-  return url.replace('open.spotify.com/', 'open.spotify.com/embed/')
+  if (!url) return null;
+  return url.replace("open.spotify.com/", "open.spotify.com/embed/");
 }
 </script>
 
 <template>
   <div class="concert-section container container--lg">
-    <div class="filter_wrapper">
-      <!-- Genre dropdown -->
-      <select v-model="selectedGenre" class="glass">
+
+    <button class="filter_toggle glass" @click="filterOpen = !filterOpen">
+      <span>Filter</span>
+      <FontAwesomeIcon :icon="filterOpen ? faXmark : faBars" />
+    </button>
+
+    <div class="filter_panel glass" :class="{ open: filterOpen }">
+      <div class="filter_panel_header">
+        <p>Filter</p>
+        <button class="filter_close glass" @click="filterOpen = false">
+          <FontAwesomeIcon :icon="faXmark" />
+        </button>
+      </div>
+
+      <select v-model="selectedGenre" class="filter_select glass">
         <option value="all">Alle genrer</option>
         <option v-for="genre in availableGenres" :key="genre" :value="genre">
           {{ genre }}
         </option>
       </select>
 
-      <!-- Dato -->
-      <input ref="dateInput" class="glass" placeholder="Alle datoer" readonly />
+      <input ref="dateInput" class="filter_select glass" placeholder="Alle datoer" readonly />
 
-      <!-- Pris slider -->
       <div class="price_slider">
-        <p class="price_label">{{ priceRange[0] }}kr – {{ priceRange[1] }}kr</p>
+        <p class="price_label">{{ priceRange[0] }},- – {{ priceRange[1] }},-</p>
         <div class="range_track">
-          <input
-            type="range"
-            :min="minPrice"
-            :max="maxPrice"
-            v-model.number="priceRange[0]"
-            @input="clampMin"
-          />
-          <input
-            type="range"
-            :min="minPrice"
-            :max="maxPrice"
-            v-model.number="priceRange[1]"
-            @input="clampMax"
-          />
+          <input type="range" :min="minPrice" :max="maxPrice" v-model.number="priceRange[0]" @input="clampMin" />
+          <input type="range" :min="minPrice" :max="maxPrice" v-model.number="priceRange[1]" @input="clampMax" />
         </div>
       </div>
 
-      <button
-        v-if="hasActiveFilters"
-        class="glass reset_button"
-        @click="resetFilters"
-      >
+      <button v-if="hasActiveFilters" class="glass reset_button" @click="resetFilters">
         Nulstil filtre
       </button>
     </div>
 
-    <div v-if="!isDesktop" class="card_wrapper">
-      <div v-for="item in filteredConcert" :key="item.id" class="concert">
-        <div class="band_name">
-          <p>{{ item.bandName }}</p>
-        </div>
+    <div class="card_wrapper">
+      <div
+        v-for="item in filteredConcert"
+        :key="item.id"
+        class="concert"
+        @click="openModal(item)"
+      >
         <div class="concert_image">
           <img :src="item.bandImage" alt="" />
-
+          <span class="concert_genre_tag">{{ item.genre }}</span>
           <div class="concert_button_wrapper">
-            <button class="concert_button glass" @click="toggle(item.id)">
+            <button class="concert_button glass" @click.stop="toggle(item.id)">
               <FontAwesomeIcon
                 :icon="faAngleDown"
                 :class="{ rotated: openId === item.id }"
@@ -233,49 +225,29 @@ function toSpotifyEmbed(url) {
         </div>
 
         <div class="concert_info">
-          <p>{{ item.genre }}</p>
-          <p>{{ item.date }}</p>
-          <p>{{ item.price }},-</p>
+          <p class="band_cardName">{{ item.bandName }}</p>
+          <div class="band_dateAndPrice" v-show="openId !== item.id">
+            <p class="band_cardDate">{{ item.date }}</p>
+            <p class="band_cardPrice">{{ item.price }},-</p>
+          </div>
         </div>
 
         <div
-          :ref="
-            (el) => {
-              if (el) contentRefs[item.id] = el;
-            }
-          "
+          :ref="(el) => { if (el) contentRefs[item.id] = el }"
           class="concert_content"
           :style="
             openId === item.id
-              ? {
-                  maxHeight: contentRefs[item.id]?.scrollHeight + 'px',
-                  paddingBottom: '20px',
-                }
-              : {
-                  maxHeight: '0px',
-                  paddingBottom: '0px',
-                }
+              ? { maxHeight: contentRefs[item.id]?.scrollHeight + 'px', paddingBottom: '20px' }
+              : { maxHeight: '0px', paddingBottom: '0px' }
           "
         >
-          <p class="band_info_box">
-            {{ item.bandDescription }}
-          </p>
-          <iframe
-            v-if="item.spotifyEmbed"
-            :src="toSpotifyEmbed(item.spotifyEmbed)"
-            width="100%"
-            height="200"
-            frameborder="0"
-            loading="lazy"
-            allow="autoplay; clipboard-write; encrypted-media"
-          />
           <div class="mobile_infobox">
             <div class="infoText">
               <p>Dato:</p>
               <p>{{ item.date }}</p>
             </div>
             <div class="infoText">
-              <p>genre:</p>
+              <p>Genre:</p>
               <p>{{ item.genre }}</p>
             </div>
             <div class="infoText">
@@ -294,61 +266,13 @@ function toSpotifyEmbed(url) {
               <p>Pris:</p>
               <p>{{ item.price }},-</p>
             </div>
-            <div class="button_wrapper">
-              <button class="glass ticket_button">Køb billet</button>
-            </div>
           </div>
-        </div>
-      </div>
-    </div>
-
-    <div v-if="isDesktop" class="card_wrapper">
-      <div
-        v-for="item in filteredConcert"
-        :key="item.id"
-        class="concert"
-        @click="openModal(item)"
-      >
-        <div class="band_name">
-          <p>{{ item.bandName }}</p>
-        </div>
-        <div class="concert_image">
-          <img :src="item.bandImage" alt="" />
-        </div>
-
-        <div class="concert_info">
-          <p>{{ item.genre }}</p>
-          <p>{{ item.date }}</p>
-          <p>{{ item.price }},-</p>
-        </div>
-
-        <div
-          :ref="
-            (el) => {
-              if (el) contentRefs[item.id] = el;
-            }
-          "
-          class="concert_content"
-          :style="
-            openId === item.id
-              ? {
-                  maxHeight: contentRefs[item.id]?.scrollHeight + 'px',
-                  paddingBottom: '20px',
-                }
-              : {
-                  maxHeight: '0px',
-                  paddingBottom: '0px',
-                }
-          "
-        >
-          <p class="band_info_box">
-            {{ item.bandDescription }}
-          </p>
+          <p class="band_info_box">{{ item.bandDescription }}</p>
           <iframe
             v-if="item.spotifyEmbed"
             :src="toSpotifyEmbed(item.spotifyEmbed)"
             width="100%"
-            height="152"
+            height="200"
             frameborder="0"
             loading="lazy"
             allow="autoplay; clipboard-write; encrypted-media"
@@ -358,242 +282,396 @@ function toSpotifyEmbed(url) {
           </div>
         </div>
       </div>
+    </div>
 
-      <Teleport to="body">
-        <Transition name="modal">
-          <div
-            v-if="selectedConcert"
-            class="modal_backdrop"
-            @click.self="closeModal"
-          >
-            <div class="modal_container">
-              <div class="modal">
-                <div class="image_wrapper">
-                  <button class="modal_close glass" @click="closeModal">
-                    <FontAwesomeIcon :icon="faXmark" />
-                  </button>
-                  <button
-                    class="modal_band-gallery glass"
-                    @click.stop="openSlider(selectedConcert, 0)"
-                  >
-                    <FontAwesomeIcon :icon="faExpand" />
-                  </button>
-                  <img
-                    :src="selectedConcert.bandImage"
-                    alt=""
-                    class="modal_image"
+    <Teleport to="body">
+      <Transition name="modal">
+        <div
+          v-if="selectedConcert"
+          class="modal_backdrop"
+          @click.self="closeModal"
+        >
+          <div class="modal_container">
+            <div class="modal">
+              <div class="image_wrapper">
+                <button class="modal_close glass" @click="closeModal">
+                  <FontAwesomeIcon :icon="faXmark" />
+                </button>
+                <button
+                  class="modal_band-gallery glass"
+                  @click.stop="openSlider(selectedConcert, 0)"
+                >
+                  <FontAwesomeIcon :icon="faExpand" />
+                </button>
+                <img :src="selectedConcert.bandImage" alt="" class="modal_image" />
+              </div>
+              <div class="opened_modal_bandbox">
+                <div class="band_detail">
+                  <h2>{{ selectedConcert.bandName }}</h2>
+                  <p class="band_info_box">{{ selectedConcert.bandDescription }}</p>
+                  <iframe
+                    v-if="selectedConcert.spotifyEmbed"
+                    :src="toSpotifyEmbed(selectedConcert.spotifyEmbed)"
+                    width="100%"
+                    height="152"
+                    frameborder="0"
+                    loading="lazy"
+                    allow="autoplay; clipboard-write; encrypted-media"
                   />
                 </div>
-                <div class="opened_modal_bandbox">
-                  <div class="band_detail">
-                    <h2>{{ selectedConcert.bandName }}</h2>
-                    <p class="band_info_box">
-                      {{ selectedConcert.bandDescription }}
-                    </p>
-                    <iframe
-                      v-if="selectedConcert.spotifyEmbed"
-                      :src="toSpotifyEmbed(selectedConcert.spotifyEmbed)"
-                      width="100%"
-                      height="152"
-                      frameborder="0"
-                      loading="lazy"
-                      allow="autoplay; clipboard-write; encrypted-media"
-                    />
+                <div class="concert_info modal_info">
+                  <div class="infoText">
+                    <p>Dato:</p>
+                    <p>{{ selectedConcert.date }}</p>
                   </div>
-                  <div class="concert_info">
-                    <div class="infoText">
-                      <p>Dato:</p>
-                      <p>{{ selectedConcert.date }}</p>
-                    </div>
-                    <div class="infoText">
-                      <p>Genre:</p>
-                      <p>{{ selectedConcert.genre }}</p>
-                    </div>
-                    <div class="infoText">
-                      <p>Koncert start:</p>
-                      <p>{{ selectedConcert.concertStart }}</p>
-                    </div>
-                    <div class="infoText">
-                      <p>Døre åbner:</p>
-                      <p>{{ selectedConcert.doorsOpen }}</p>
-                    </div>
-                    <div class="infoText">
-                      <p>Venue:</p>
-                      <p>{{ selectedConcert.venue }}</p>
-                    </div>
-                    <div class="infoText">
-                      <p>Pris:</p>
-                      <p>{{ selectedConcert.price }},-</p>
-                    </div>
-                    <div class="button_wrapper">
-                      <button class="glass ticket_button">Køb billet</button>
-                    </div>
+                  <div class="infoText">
+                    <p>Genre:</p>
+                    <p>{{ selectedConcert.genre }}</p>
                   </div>
-                </div>
-              </div>
-
-              <div class="modal_sidebar">
-                <h3>Andre {{ selectedConcert.genre }} koncerter</h3>
-                <p
-                  v-if="otherConcerts.length === 0"
-                  style="color: white; font-size: 14px"
-                >
-                  Ingen andre {{ selectedConcert.genre }} koncerter
-                </p>
-                <div
-                  v-for="item in otherConcerts"
-                  :key="item.id"
-                  class="sidebar_concert"
-                  @click="openModal(item)"
-                >
-                  <img :src="item.bandImage" />
-                  <div class="sidebar_overlay">
-                    <span class="glass"
-                      >{{ item.bandName }}
-                      <FontAwesomeIcon
-                        :icon="faAngleRight"
-                        class="sidebar_icon"
-                    /></span>
+                  <div class="infoText">
+                    <p>Koncert start:</p>
+                    <p>{{ selectedConcert.concertStart }}</p>
+                  </div>
+                  <div class="infoText">
+                    <p>Døre åbner:</p>
+                    <p>{{ selectedConcert.doorsOpen }}</p>
+                  </div>
+                  <div class="infoText">
+                    <p>Venue:</p>
+                    <p>{{ selectedConcert.venue }}</p>
+                  </div>
+                  <div class="infoText">
+                    <p>Pris:</p>
+                    <p>{{ selectedConcert.price }},-</p>
+                  </div>
+                  <div class="button_wrapper">
+                    <button class="glass ticket_button">Køb billet</button>
                   </div>
                 </div>
               </div>
             </div>
+
+            <div class="modal_sidebar">
+              <h3>Andre {{ selectedConcert.genre }} koncerter</h3>
+              <p v-if="otherConcerts.length === 0" style="color: white; font-size: 14px">
+                Ingen andre {{ selectedConcert.genre }} koncerter
+              </p>
+              <div
+                v-for="item in otherConcerts"
+                :key="item.id"
+                class="sidebar_concert"
+                @click="openModal(item)"
+              >
+                <img :src="item.bandImage" />
+                <div class="sidebar_overlay">
+                  <span class="glass">
+                    {{ item.bandName }}
+                    <FontAwesomeIcon :icon="faAngleRight" class="sidebar_icon" />
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
-        </Transition>
-      </Teleport>
+        </div>
+      </Transition>
+    </Teleport>
 
-      <Teleport to="body">
-        <Transition name="modal">
-          <div
-            v-if="sliderConcert"
-            class="modal_backdrop"
-            @click.self="closeSlider"
-          >
-            <div class="slider_container">
-              <button class="modal_close glass" @click="closeSlider">
-                <FontAwesomeIcon :icon="faXmark" />
-              </button>
-
-              <button class="slider_arrow left glass" @click="prevSlide">
-                <FontAwesomeIcon :icon="faAngleLeft" />
-              </button>
-
-              <img
-                :src="sliderConcert.bandImages[sliderIndex]"
-                class="slider_image"
+    <Teleport to="body">
+      <Transition name="modal">
+        <div
+          v-if="sliderConcert"
+          class="modal_backdrop"
+          @click.self="closeSlider"
+        >
+          <div class="slider_container">
+            <button class="modal_close glass" @click="closeSlider">
+              <FontAwesomeIcon :icon="faXmark" />
+            </button>
+            <button class="slider_arrow left glass" @click="prevSlide">
+              <FontAwesomeIcon :icon="faAngleLeft" />
+            </button>
+            <img :src="sliderConcert.bandImages[sliderIndex]" class="slider_image" />
+            <button class="slider_arrow right glass" @click="nextSlide">
+              <FontAwesomeIcon :icon="faAngleRight" />
+            </button>
+            <div class="slider_dots">
+              <span
+                v-for="(_, i) in sliderConcert.bandImages"
+                :key="i"
+                :class="['dot', { active: i === sliderIndex }]"
+                @click="sliderIndex = i"
               />
-
-              <button class="slider_arrow right glass" @click="nextSlide">
-                <FontAwesomeIcon :icon="faAngleRight" />
-              </button>
-
-              <div class="slider_dots">
-                <span
-                  v-for="(_, i) in sliderConcert.bandImages"
-                  :key="i"
-                  :class="['dot', { active: i === sliderIndex }]"
-                  @click="sliderIndex = i"
-                />
-              </div>
             </div>
           </div>
-        </Transition>
-      </Teleport>
-    </div>
+        </div>
+      </Transition>
+    </Teleport>
+
   </div>
 </template>
 
 <style scoped>
-.mobile_infobox {
-  padding: 30px;
-  background-color: #5774b8;
-  border-radius: 8px;
+.concert {
+  background: white;
+  border-radius: 16px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
 
-  .button_wrapper {
-    width: 100%;
-    justify-content: center;
-    margin: 0 auto;
+.concert:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+}
+
+.concert_image {
+  position: relative;
+  overflow: hidden;
+}
+
+.concert_image img {
+  width: 100%;
+  height: 250px;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+  transition: transform 0.3s ease;
+}
+
+.concert:hover .concert_image img {
+  transform: scale(1.05);
+}
+
+.concert_genre_tag {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: rgba(176, 192, 235, 0.7);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 100px;
+  padding: 4px 14px;
+  font-size: 14px;
+  color: #111;
+  font-family: "Barlow Condensed", sans-serif;
+}
+
+.concert_button_wrapper {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+}
+
+.concert_button {
+  width: 48px;
+  height: 48px;
+  background: #5774b8 !important;
+  border-radius: 50%;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  svg {
+    color: white;
+    width: 20px;
+    height: 20px;
+    transition: transform 0.3s ease;
+  }
+}
+
+.rotated {
+  transform: rotate(180deg);
+}
+
+.concert_info {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 15px;
+  background: #eeeeff;
+
+  .band_cardName {
+    color: #0b1071;
+    font-family: "Barlow Condensed", sans-serif;
+    font-size: 32px;
+    font-weight: bold;
   }
 
+  .band_dateAndPrice {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-top: 15px;
+
+    .band_cardDate {
+      font-family: "Barlow Condensed", sans-serif;
+      color: #535353;
+      font-size: 16px;
+    }
+
+    .band_cardPrice {
+      font-family: "Barlow Condensed", sans-serif;
+      font-size: 20px;
+      color: #535353;
+      font-weight: 600;
+    }
+  }
+}
+
+.concert_content {
+  overflow: hidden;
+  transition: max-height 0.3s ease, padding 0.3s ease;
+  background-color: #eeeeff;
+  padding: 0 20px;
+}
+
+.mobile_infobox {
+  background-color: #eeeeff;
+  row-gap: 10px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+
+  p { color: #111; }
+}
+
+.infoText {
+  width: 100%;
+  margin-bottom: 10px;
+
+  p:first-child {
+    font-size: 13px;
+    font-weight: 700;
+    color: #5774b8;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-family: "Barlow Condensed", sans-serif;
+  }
+
+  p:last-child {
+    font-size: 18px;
+    font-weight: 500;
+    color: #111;
+    font-family: "Barlow Condensed", sans-serif;
+  }
+}
+
+.band_info_box {
+  font-family: "Inter", sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+  color: #333;
+  padding: 15px 0;
+}
+
+.ticket_button {
+  background: #5774b8;
+  color: white;
+  font-size: 18px;
+  padding: 12px 24px;
+  border-radius: 100px;
+  border: none;
+  cursor: pointer;
+  font-family: "Barlow Condensed", sans-serif;
+  margin-top: 8px;
+  margin-bottom: 16px;
+}
+
+.button_wrapper {
+  display: flex;
+  justify-content: center;
+}
+
+.filter_toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 50px;
+  padding: 0 24px;
+  font-size: 20px;
+  color: white;
+  font-family: "Barlow Condensed", sans-serif;
+  cursor: pointer;
+  border: none;
+  margin: 20px 0;
+
+  svg {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+.filter_panel {
+  display: none;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px;
+  margin-bottom: 24px;
+  border-radius: 16px;
+}
+
+.filter_panel.open {
+  display: flex;
+}
+
+.filter_panel_header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
   p {
+    font-size: 24px;
+    font-family: "Barlow Condensed", sans-serif;
     color: white;
   }
 }
 
-.filter_wrapper {
+.filter_close {
+  width: 44px;
+  height: 44px;
+  color: white;
+  font-size: 18px;
+  cursor: pointer;
+  border: none;
   display: flex;
-  align-items: flex-start;
-  gap: 30px;
-  margin: 30px 0;
-  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+
+  svg {
+    width: 20px;
+    height: 20px;
+  }
 }
 
-.filter_wrapper select,
-.filter_wrapper input,
-.filter_wrapper button {
-  height: 50px;
+.filter_select {
+  width: 100%;
+  height: 56px;
   font-size: 20px;
   color: white;
   padding: 0 20px;
   cursor: pointer;
   border: none;
   outline: none;
-}
-
-.filter_wrapper input.glass {
-  overflow: visible;
-}
-
-.reset_button {
-  color: white;
-  font-size: 20px;
-  padding: 0 20px;
-  cursor: pointer;
-  align-self: center;
-}
-
-#genre_selector {
-  color: white;
-  width: 150px;
-  font-size: 24px;
-  margin-top: 30px;
-}
-
-/* Genre checkboxes — samme udseende som originalen */
-.genre_checkboxes {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.checkbox_label {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: white;
-  font-size: 20px;
-  cursor: pointer;
-}
-
-.checkbox_label input[type="checkbox"] {
-  width: 18px;
-  height: 18px;
-  accent-color: #5774b8;
-  cursor: pointer;
-}
-
-/* Pris slider */
-.price_slider {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  min-width: 200px;
-  align-self: center;
+  font-family: "Barlow Condensed", sans-serif;
+  background: rgba(87, 116, 184, 0.6);
 }
 
 .price_label {
+  color: white;
   font-size: 18px;
-  margin: 0;
+  font-family: "Barlow Condensed", sans-serif;
+  margin-bottom: 8px;
+}
+
+.reset_button {
+  height: 50px;
+  padding: 0 20px;
+  color: white;
+  font-size: 18px;
+  font-family: "Barlow Condensed", sans-serif;
+  cursor: pointer;
+  border: none;
 }
 
 .range_track {
@@ -612,62 +690,77 @@ function toSpotifyEmbed(url) {
   transform: translateY(-50%);
 }
 
-.range_track input[type="range"]::-webkit-slider-runnable-track {
-  height: 4px;
-  background: rgba(0, 0, 0, 0.2);
-  border-radius: 2px;
-}
-
 .range_track input[type="range"]::-webkit-slider-thumb {
   pointer-events: all;
   -webkit-appearance: none;
-  appearance: none;
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: #5774b8;
+  background: white;
   cursor: pointer;
   margin-top: -8px;
-  border: none;
+  border: 3px solid #5774b8;
 }
 
-.range_track input[type="range"]::-moz-range-thumb {
-  pointer-events: all;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: #5774b8;
-  cursor: pointer;
-  border: none;
+.range_track input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 2px;
 }
 
-.concert {
-  margin-bottom: 30px;
-  cursor: pointer;
-  overflow: hidden;
-  transition: transform 0.3s ease;
+.range_track input[type="range"]::-moz-range-track {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 2px;
 }
 
-.band_name > p {
-  font-size: 24px;
-  margin: 15px 0;
-}
+@media (min-width: 993px) {
+  .filter_toggle {
+    display: none;
+  }
 
-.concert_button_wrapper {
-  position: absolute;
-  bottom: 10px;
-  right: 10px;
+  .concert {
+    overflow: hidden;
+  }
 
-  .concert_button {
-    width: 50px;
+  .filter_panel {
+    display: flex !important;
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+    border-radius: 100px;
+    padding: 12px 24px;
+    gap: 20px;
+    margin-bottom: 30px;
+  }
+
+  .filter_panel_header {
+    display: none;
+  }
+
+  .filter_select {
+    width: auto;
+    min-width: 180px;
     height: 50px;
+  }
 
-    svg {
-      width: 35px;
-      height: 35px;
-      color: white;
-      transition: transform 0.3s ease;
-    }
+  .price_slider {
+    min-width: 220px;
+  }
+
+  .concert_button_wrapper {
+    display: none;
+  }
+
+  .concert_content {
+    max-height: 0 !important;
+    overflow: visible !important;
+    padding: 0 20px 20px !important;
+    display: none;
+  }
+
+  .band_dateAndPrice {
+    display: flex !important;
   }
 }
 
@@ -680,6 +773,7 @@ function toSpotifyEmbed(url) {
   align-items: center;
   z-index: 9999;
 }
+
 .modal_container {
   display: flex;
   gap: 15px;
@@ -740,19 +834,11 @@ function toSpotifyEmbed(url) {
     max-width: 0;
     opacity: 0;
     overflow: hidden;
-    transition:
-      max-width 0.2s ease,
-      opacity 0.2s ease;
+    transition: max-width 0.2s ease, opacity 0.2s ease;
   }
 
-  &:hover span {
-    gap: 6px;
-  }
-
-  &:hover .sidebar_icon {
-    max-width: 14px;
-    opacity: 1;
-  }
+  &:hover span { gap: 6px; }
+  &:hover .sidebar_icon { max-width: 14px; opacity: 1; }
 }
 
 .modal_image {
@@ -790,7 +876,7 @@ function toSpotifyEmbed(url) {
     flex: 1;
   }
 
-  .concert_info {
+  .modal_info {
     padding: 30px;
     flex-direction: column;
     height: auto;
@@ -798,6 +884,9 @@ function toSpotifyEmbed(url) {
     display: flex;
     justify-content: flex-start;
     align-items: flex-start;
+    background: #eeeeff;
+    max-height: none !important;
+    overflow: visible !important;
 
     .button_wrapper {
       width: 100%;
@@ -806,76 +895,27 @@ function toSpotifyEmbed(url) {
   }
 }
 
-.infoText {
-  width: 100%;
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  margin-bottom: 15px;
-}
-
-.rotated {
-  transform: rotate(180deg);
-}
-
-.concert_image {
-  position: relative;
-  overflow: hidden;
-
-  img {
-    width: 100%;
-    height: 250px;
-    object-position: center;
-    object-fit: cover;
-    transition: transform 0.3s ease;
-    display: block;
-  }
-}
-
-.concert:hover .concert_image img {
-  transform: scale(1.1);
-}
-
-.concert_info {
-  display: flex;
-  justify-content: space-evenly;
-  align-items: center;
-  font-size: 18px;
-  color: white;
-  background-color: #5774b8;
-  height: 50px;
-}
-
-.concert_content {
-  overflow: hidden;
-  transition:
-    max-height 0.3s ease,
-    padding 0.3s ease;
-}
-
-.band_info_box {
-  padding: 15px 0;
-}
-
-.button_wrapper {
-  margin-top: 15px;
-  display: flex;
-  justify-content: flex-end;
-}
-
-.ticket_button {
-  color: white;
-  font-size: 18px;
-  padding: 15px;
-}
-
 .modal-enter-from,
 .modal-leave-to {
   opacity: 0;
   transform: scale(0.95);
 }
+
 .modal-enter-active,
 .modal-leave-active {
   transition: all 0.2s ease;
+}
+
+.modal_band-gallery {
+  position: absolute;
+  bottom: 15px;
+  right: 15px;
+  width: 40px;
+  height: 40px;
+  color: white;
+  font-size: 18px;
+  cursor: pointer;
+  z-index: 10;
 }
 
 .slider_container {
@@ -919,30 +959,5 @@ function toSpotifyEmbed(url) {
 
 .dot.active {
   background: white;
-}
-
-.modal_band-gallery {
-  position: absolute;
-  bottom: 15px;
-  right: 15px;
-  width: 40px;
-  height: 40px;
-  color: white;
-  font-size: 18px;
-  cursor: pointer;
-  z-index: 10;
-}
-
-@media (max-width: 992px) {
-  .filter_wrapper {
-    flex-wrap: wrap;
-  }
-
-  .filter_wrapper select,
-  .filter_wrapper input,
-  .filter_wrapper button {
-    flex: 1;
-    min-width: 140px;
-  }
 }
 </style>

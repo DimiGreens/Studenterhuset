@@ -58,8 +58,8 @@ onUnmounted(() => {
     v-else-if="windowWidth <= 992"
     :class="['navigation_mobile', 'glass', { open: menuOpen }]"
   >
-    <NuxtLink to="/">Forside</NuxtLink>
-    <NuxtLink to="/concerts">Koncerter</NuxtLink>
+    <NuxtLink to="/"><span class="font-style-heading">Forside</span></NuxtLink>
+    <NuxtLink to="/concerts"><span class="font-style-heading">Koncerter</span></NuxtLink>
     <NuxtLink to="/events">Begivenheder</NuxtLink>
     <NuxtLink to="/cafe">Caféen</NuxtLink>
     <NuxtLink to="/about">Om Studenterhuset</NuxtLink>
@@ -94,6 +94,7 @@ onUnmounted(() => {
     font-size: 24px;
     text-decoration: none;
     color: white;
+    font-family: "Barlow Condensed", sans-serif;
   }
 }
 
@@ -178,6 +179,7 @@ onUnmounted(() => {
       padding: 15px;
       margin: 15px;
       color: white;
+      font-family: "Barlow Condensed", sans-serif;
     }
   }
 }

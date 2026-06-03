@@ -154,19 +154,43 @@ const { data: heroBillede } = await useFetch("/api/contentful", {
   query: { contentType: "heroBillede", include: 1, "fields.billedtitel": "Cafeen Hero" },
 });
 
+const screenWidth = ref(1920)
+
+onMounted(() => {
+  screenWidth.value = window.innerWidth
+})
+
 const heroImgUrl = computed(() => {
   const item = heroBillede.value?.items?.[0]
   const assetId = item?.fields?.heroImg?.[0]?.sys?.id
   const asset = heroBillede.value?.includes?.Asset?.find(a => a.sys.id === assetId)
   if (!asset) return null
-  return `https:${asset.fields.file.url}?w=1920&q=70&fm=webp`
+
+  let width
+  if (screenWidth.value < 992) {
+    width = 600
+  } else if (screenWidth.value < 1510) {
+    width = 992
+  } else {
+    width = 1920
+  }
+
+  return `https:${asset.fields.file.url}?w=${width}&q=80&fm=webp`
 })
+
+const { data: glassBox } = await useFetch("/api/contentful", {
+  query: { contentType: "heroGlassBox", include: 1, "fields.titel": "Glass box cafeen" },
+});
 </script>
 <template>
   <body>
-    <div class="hero full-bleed"
-       :style="heroImgUrl ? { backgroundImage: `url(${heroImgUrl})` } : {}">
-    </div>
+    <div class="hero full-bleed container container-md"
+  :style="heroImgUrl ? { backgroundImage: `url(${heroImgUrl})` } : {}">
+    <HeroGlassBox 
+    :heading="glassBox?.items?.[0]?.fields?.heading"
+    :hero-tagline="glassBox?.items?.[0]?.fields?.heroTagline"
+  />
+  </div>
     <div class="container container--md">
       <h1>Caféen</h1>
       <p>

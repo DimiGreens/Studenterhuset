@@ -170,15 +170,10 @@ onUnmounted(() => {
       color: white;
       font-family: "Barlow Condensed", sans-serif;
       transition: 0.15s ease;
-      border-bottom: 2px solid transparent;
     }
 
     a:hover {
       color: var(--primary);
-    }
-
-    a.router-link-exact-active {
-      border-bottom: 2px solid white;
     }
   }
 

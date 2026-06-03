@@ -144,6 +144,12 @@ onMounted(() => {
         }
       },
     });
+
+    const route = useRoute();
+    if (route.query.open) {
+      const match = allEvents.value.find((e) => e.id === route.query.open);
+      if (match) openModal(match);
+    }
   }
 
   const prices = props.events

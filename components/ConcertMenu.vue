@@ -141,6 +141,12 @@ onMounted(() => {
         }
       },
     });
+
+    const route = useRoute();
+    if (route.query.open) {
+      const match = concerts.value.find((c) => c.id === route.query.open);
+      if (match) openModal(match);
+    }
   }
 
   const prices = props.concert.map((c) => c.price).filter((p) => p != null);

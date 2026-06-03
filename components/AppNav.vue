@@ -1,7 +1,8 @@
 <script setup>
 import { ref, onMounted, onUnmounted, watch } from "vue";
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
-import { faAngleUp, faBars, faXmark } from "@fortawesome/free-solid-svg-icons";
+import { faBars, faXmark } from "@fortawesome/free-solid-svg-icons";
+import Logo from '../assets/images/Studenterhuset_logo.svg?component'
 
 const route = useRoute();
 
@@ -12,39 +13,27 @@ watch(
   },
 );
 
-const atTop = ref(true);
 const windowWidth = ref(0);
 const menuOpen = ref(false);
 
-const handleScroll = () => (atTop.value = window.scrollY === 0);
 const handleResize = () => (windowWidth.value = window.innerWidth);
-const scrollToTop = () => {
-  window.scrollTo({ top: 0, behavior: "smooth" });
-};
 
 onMounted(() => {
   windowWidth.value = window.innerWidth;
-  window.addEventListener("scroll", handleScroll);
   window.addEventListener("resize", handleResize);
 });
 
 onUnmounted(() => {
-  window.removeEventListener("scroll", handleScroll);
   window.removeEventListener("resize", handleResize);
 });
 </script>
 
 <template>
-  <nav
-    v-if="windowWidth > 992"
-    :class="['glass', 'navigation', { scrolled: !atTop }]"
-  >
+  <nav v-if="windowWidth > 992" class="navigation">
     <div class="home">
-      <NuxtLink to="/"
-        ><img
-          src="../assets/images/Studenterhuset_logo.png"
-          alt="Studenterhuset logo"
-      /></NuxtLink>
+      <NuxtLink to="/">
+        <Logo class="logo" alt="Studenterhuset logo" />
+      </NuxtLink>
     </div>
     <div class="site_navigation">
       <NuxtLink to="/concerts">Koncerter</NuxtLink>
@@ -56,21 +45,23 @@ onUnmounted(() => {
   </nav>
   <nav
     v-else-if="windowWidth <= 992"
-    :class="['navigation_mobile', 'glass', { open: menuOpen }]"
+    :class="['navigation_mobile', { open: menuOpen }]"
   >
-    <NuxtLink to="/"><span class="font-style-heading">Forside</span></NuxtLink>
-    <NuxtLink to="/concerts"><span class="font-style-heading">Koncerter</span></NuxtLink>
-    <NuxtLink to="/events">Begivenheder</NuxtLink>
-    <NuxtLink to="/cafe">Caféen</NuxtLink>
-    <NuxtLink to="/about">Om Studenterhuset</NuxtLink>
-    <NuxtLink to="/student">Til studerende</NuxtLink>
+    <div class="mobile_bottom">
+      <div class="mobile_logo">
+        <NuxtLink to="/">
+          <Logo class="logo" />
+        </NuxtLink>
+      </div>
+      <NuxtLink to="/">Forside</NuxtLink>
+      <NuxtLink to="/concerts">Koncerter</NuxtLink>
+      <NuxtLink to="/events">Begivenheder</NuxtLink>
+      <NuxtLink to="/cafe">Caféen</NuxtLink>
+      <NuxtLink to="/about">Om Studenterhuset</NuxtLink>
+      <NuxtLink to="/student">Til studerende</NuxtLink>
+    </div>
   </nav>
-  <Transition name="slide">
-    <button v-if="!atTop" class="to_top_button glass" @click="scrollToTop">
-      <FontAwesomeIcon :icon="faAngleUp" />
-    </button>
-  </Transition>
-  <button class="burgermenu glass" @click="menuOpen = !menuOpen">
+  <button class="burgermenu" @click="menuOpen = !menuOpen">
     <FontAwesomeIcon :icon="menuOpen ? faXmark : faBars" />
   </button>
 </template>
@@ -78,28 +69,49 @@ onUnmounted(() => {
 <style scoped>
 .navigation_mobile {
   position: fixed;
-  bottom: 20px;
-  right: 20px;
-  transform: translateX(120%);
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  transform: translateX(100%);
   transition: transform 0.3s ease;
   display: flex;
   flex-direction: column;
-  padding: 30px;
-  border-radius: 8px;
-  z-index: 999;
-  padding-bottom: 80px;
+  justify-content: flex-end;
+  padding: 40px;
+  z-index: 998;
+  background: var(--primary);
+}
+
+.navigation_mobile.open {
+  transform: translateX(0);
+}
+
+.mobile_bottom {
+  display: flex;
+  flex-direction: column;
+  max-width: 300px;
+  padding-right: 60px;
+  margin: auto 0 60px auto;
 
   a {
-    margin: 15px;
-    font-size: 24px;
+    margin: 8px 0;
+    font-size: 32px;
+    font-weight: 500;
     text-decoration: none;
     color: white;
     font-family: "Barlow Condensed", sans-serif;
   }
 }
 
-.navigation_mobile.open {
-  transform: translateX(0);
+.mobile_logo {
+  margin-bottom: 16px;
+}
+
+.mobile_logo .logo {
+  height: 25px;
+  width: auto;
+  color: white;
 }
 
 .burgermenu {
@@ -110,6 +122,9 @@ onUnmounted(() => {
   right: 20px;
   z-index: 999;
   color: white;
+  background-color: var(--primary);
+  border-radius: 50%;
+  border: none;
 
   svg {
     width: 30px;
@@ -117,87 +132,65 @@ onUnmounted(() => {
   }
 }
 
-.to_top_button {
-  width: 60px;
-  height: 60px;
-  position: fixed;
-  bottom: 20px;
-  left: 20px;
-  z-index: 999;
-  color: white;
-
-  svg {
-    width: 30px;
-    height: 30px;
+/* @media (min-width: 500px) {
+  .mobile_bottom {
+    margin: auto 0 60px auto;
   }
-}
-
-.slide-enter-active,
-.slide-leave-active {
-  transition: transform 0.3s ease;
-}
-.slide-enter-from,
-.slide-leave-to {
-  transform: translateX(-100%);
-}
-.slide-enter-to,
-.slide-leave-from {
-  transform: translateX(0);
-}
+} */
 
 @media screen and (min-width: 993px) {
   .burgermenu {
     display: none;
   }
 
-  .to_top_button {
-    display: none;
-  }
-
   .navigation {
-    height: 125px;
+    height: 80px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding-inline: 50px;
-    transition: height 0.3s ease;
-    position: fixed; /* ← was sticky */
+    position: fixed;
     top: 0;
+    left: 0;
     z-index: 100;
-    margin: 15px;
-    width: calc(100% - 30px); /* ← add this */
-  }
-
-  .scrolled {
-    height: 80px;
+    width: 100%;
+    margin: 0;
+    border-radius: 0;
+    background: rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
   }
 
   .site_navigation {
     a {
       text-decoration: none;
-      font-size: 28px;
-      padding: 15px;
-      margin: 15px;
+      font-size: 24px;
+      padding: 8px;
+      margin: 5px;
       color: white;
       font-family: "Barlow Condensed", sans-serif;
+      transition: 0.15s ease;
+      border-bottom: 2px solid transparent;
+    }
+
+    a:hover {
+      color: var(--primary);
+    }
+
+    a.router-link-exact-active {
+      border-bottom: 2px solid white;
     }
   }
-}
 
-@media screen and (min-width: 992px) and (max-width: 1500px) {
-  .site_navigation a {
-    font-size: 24px;
-    padding: 8px;
-    margin: 5px;
-  }
-
-  .navigation {
-    padding-inline: 20px;
-  }
-
-  .home img {
+  .home .logo {
     height: 30px;
     width: auto;
+    color: white;
+    transition: color 0.2s ease;
+  }
+
+  .home a:hover :deep(.logo) {
+    color: var(--primary);
   }
 }
 </style>

@@ -53,7 +53,6 @@ onUnmounted(() => {
           <Logo class="logo" />
         </NuxtLink>
       </div>
-      <NuxtLink to="/">Forside</NuxtLink>
       <NuxtLink to="/concerts">Koncerter</NuxtLink>
       <NuxtLink to="/events">Begivenheder</NuxtLink>
       <NuxtLink to="/cafe">Caféen</NuxtLink>
@@ -97,12 +96,16 @@ onUnmounted(() => {
   a {
     margin: 8px 0;
     font-size: 32px;
-    font-weight: 500;
+    font-weight: 400;
     text-decoration: none;
     color: white;
     font-family: "Barlow Condensed", sans-serif;
   }
 }
+
+a.router-link-exact-active {
+    text-shadow: 0 0 2px white;
+  }
 
 .mobile_logo {
   margin-bottom: 16px;
@@ -112,6 +115,11 @@ onUnmounted(() => {
   height: 25px;
   width: auto;
   color: white;
+  transition: transform 0.2s ease
+}
+
+.mobile_logo a.router-link-exact-active :deep(.logo) {
+  transform: scale(1.05);
 }
 
 .burgermenu {
@@ -173,19 +181,30 @@ onUnmounted(() => {
     }
 
     a:hover {
-      color: var(--primary);
-    }
+      color: white;
+      text-shadow: 0 0 2px white;
+}
+
+a.router-link-exact-active {
+  color: white;
+  text-shadow: 0 0 2px white;
+}
   }
 
   .home .logo {
     height: 30px;
     width: auto;
     color: white;
-    transition: color 0.2s ease;
+    transition: transform 0.2s ease;
   }
 
   .home a:hover :deep(.logo) {
-    color: var(--primary);
+    transform: scale(1.01);
   }
+
+  .home a.router-link-exact-active :deep(.logo) {
+  transform: scale(1.01);
+}
+
 }
 </style>

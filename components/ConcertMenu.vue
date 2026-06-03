@@ -164,6 +164,12 @@ function toSpotifyEmbed(url) {
   if (!url) return null;
   return url.replace("open.spotify.com/", "open.spotify.com/embed/");
 }
+
+function handleClick(item) {
+  if (window.innerWidth >= 993) {
+    openModal(item)
+  }
+}
 </script>
 
 <template>
@@ -209,7 +215,7 @@ function toSpotifyEmbed(url) {
         v-for="item in filteredConcert"
         :key="item.id"
         class="concert"
-        @click="openModal(item)"
+        @click="handleClick(item)"
       >
         <div class="concert_image">
           <img :src="item.bandImage" alt="" />

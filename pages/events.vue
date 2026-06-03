@@ -50,6 +50,10 @@ const begivenheder = (data.value?.items ?? []).map((item) => {
   };
 });
 
+const { data: heroBillede } = await useFetch("/api/contentful", {
+  query: { contentType: "heroBillede", include: 1, "fields.billedtitel": "Begivenheder Hero" },
+});
+
 const screenWidth = ref(1920)
 
 onMounted(() => {
@@ -73,6 +77,7 @@ const heroImgUrl = computed(() => {
 
   return `https:${asset.fields.file.url}?w=${width}&q=80&fm=webp`
 })
+
 const { data: glassBox } = await useFetch("/api/contentful", {
   query: { contentType: "heroGlassBox", include: 1, "fields.titel": "Glass box begivenheder" },
 });

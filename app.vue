@@ -9,7 +9,5 @@
 </template>
 
 <style scoped>
-  .page{
-    padding: 0 15px;
-  }
+
 </style>

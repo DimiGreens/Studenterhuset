@@ -149,11 +149,23 @@ const openingHours = [
     closing: "",
   },
 ];
+
+const { data: heroBillede } = await useFetch("/api/contentful", {
+  query: { contentType: "heroBillede", include: 1, "fields.billedtitel": "Cafeen Hero" },
+});
+
+const heroImgUrl = computed(() => {
+  const item = heroBillede.value?.items?.[0]
+  const assetId = item?.fields?.heroImg?.[0]?.sys?.id
+  const asset = heroBillede.value?.includes?.Asset?.find(a => a.sys.id === assetId)
+  if (!asset) return null
+  return `https:${asset.fields.file.url}?w=1920&q=70&fm=webp`
+})
 </script>
 <template>
   <body>
-    <div class="hero full-bleed">
-      <img src="../assets/images/Studenterhuset_bar.jpg" alt="" />
+    <div class="hero full-bleed"
+       :style="heroImgUrl ? { backgroundImage: `url(${heroImgUrl})` } : {}">
     </div>
     <div class="container container--md">
       <h1>Caféen</h1>

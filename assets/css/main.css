@@ -215,23 +215,20 @@ p {
     margin: 0 -15px;
     margin-bottom: 50px;
     overflow: hidden;
-}
-
-.hero img {
-    width: 100%;
-    height: 240px;
-    object-fit: cover;
-    display: block;
+    height: 390px;
+    background-size: cover;
+    background-position: center;
+    max-width: 100vw;
 }
 
 @media (min-width: 992px) {
-    .hero img {
-        height: 50vh;
+    .hero {
+        height: 70vh;
     }
 }
 
 @media (min-width: 1510px) {
-    .hero img {
+    .hero {
         height: 80vh;
     }
 }
@@ -409,9 +406,12 @@ img {
 }
 
 .full-bleed {
-    width: 100vw;
-    margin-left: calc(50% - 50vw);
-    margin-right: calc(50% - 50vw);
+    position: relative;
+    left: 50%;
+    right: 50%;
+    margin-left: -50%;
+    margin-right: -50%;
+    width: 100%;
 }
 
 .slider .swiper-slide {

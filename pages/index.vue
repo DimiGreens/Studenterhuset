@@ -189,6 +189,22 @@ const kommendBegivenheder = (eventData.value?.items ?? [])
   .filter((e) => e._dateObj && e._dateObj >= today)
   .sort((a, b) => a._dateObj - b._dateObj)
   .slice(0, 3);
+
+function goToEvent(id) {
+  if (window.innerWidth >= 993) {
+    navigateTo(`/events?open=${id}`);
+  } else {
+    navigateTo("/events");
+  }
+}
+
+function goToConcert(id) {
+  if (window.innerWidth >= 993) {
+    navigateTo(`/concerts?open=${id}`);
+  } else {
+    navigateTo("/concerts");
+  }
+}
 </script>
 
 <template>
@@ -227,7 +243,7 @@ const kommendBegivenheder = (eventData.value?.items ?? [])
         v-for="item in kommendKoncerter"
         :key="item.id"
         class="preview_card"
-        @click="navigateTo(`/concerts?open=${item.id}`)"
+        @click="goToConcert(item.id)"
       >
         <div class="preview_image">
           <img :src="item.bandImage" alt="" />
@@ -262,7 +278,7 @@ const kommendBegivenheder = (eventData.value?.items ?? [])
         v-for="item in kommendBegivenheder"
         :key="item.id"
         class="preview_card"
-        @click="navigateTo(`/events?open=${item.id}`)"
+        @click="goToEvent(item.id)"
       >
         <div class="preview_image">
           <img :src="item.billede" alt="" />

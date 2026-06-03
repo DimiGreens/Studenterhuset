@@ -2,6 +2,19 @@
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 import { faAngleRight } from "@fortawesome/free-solid-svg-icons";
 
+
+const { data: heroBillede } = await useFetch("/api/contentful", {
+  query: { contentType: "heroBillede", include: 1, "fields.billedtitel": "Forside Hero desktop" },
+});
+
+const heroImgUrl = computed(() => {
+  const item = heroBillede.value?.items?.[0]
+  const assetId = item?.fields?.heroImg?.[0]?.sys?.id
+  const asset = heroBillede.value?.includes?.Asset?.find(a => a.sys.id === assetId)
+  if (!asset) return null
+  return `https:${asset.fields.file.url}?w=1920&q=70&fm=webp`
+})
+
 const mySlidesConcert = [
   {
     id: 1,
@@ -66,8 +79,9 @@ const mySlidesEvent = [
 </script>
 
 <template>
-  <div class="hero full-bleed">
-    <img src="../assets/images/Studenterhuset_forside.jpg" alt="" />
+  <div class="hero full-bleed"
+  :style="heroImgUrl ? { backgroundImage: `url(${heroImgUrl})` } : {}">
+    
   </div>
   <div class="container container--md mt-4">
     <img src="../assets/images/Studenterhuset_logo_sort.jpg" alt="" />

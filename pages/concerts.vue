@@ -64,11 +64,37 @@ const koncerter = (data.value?.items ?? []).map((item) => {
   };
 });
 console.log(koncerter)
+
+// henter hero 
+const { data: heroBillede } = await useFetch("/api/contentful", {
+  query: { contentType: "heroBillede", include: 1, "fields.billedtitel": "Koncerter hero" },
+});
+
+const heroImgUrl = computed(() => {
+  const item = heroBillede.value?.items?.[0]
+  const assetId = item?.fields?.heroImg?.[0]?.sys?.id
+  const asset = heroBillede.value?.includes?.Asset?.find(a => a.sys.id === assetId)
+  if (!asset) return null
+
+  const screenWidth = import.meta.client ? window.innerWidth : 1920
+
+  let width
+  if (screenWidth < 992) {
+    width = 600
+  } else if (screenWidth < 1510) {
+    width = 992
+  } else {
+    width = 1920
+  }
+
+  return `https:${asset.fields.file.url}?w=${width}&q=100&fm=webp`
+})
 </script>
 
 <template>
-  <div class="hero full-bleed">
-    <img src="../assets/images/Studenterhuset_koncert.JPG" alt="" />
+  <div class="hero full-bleed"
+   :style="heroImgUrl ? { backgroundImage: `url(${heroImgUrl})` } : {}">
+   
   </div>
 
   <div class="container container--md mt-4 mb-3">

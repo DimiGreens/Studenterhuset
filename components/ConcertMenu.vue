@@ -33,6 +33,7 @@ const selectedGenre = ref("all");
 const selectedConcert = ref(null);
 const sliderConcert = ref(null);
 const sliderIndex = ref(0);
+const searchQuery = ref("");
 
 const priceRange = ref([0, 500]);
 const minPrice = ref(0);
@@ -90,6 +91,15 @@ const filteredConcert = computed(() => {
     const concertDate = new Date(year, month - 1, day);
     return concertDate >= today;
   });
+
+  if (searchQuery.value.trim()) {
+    const q = searchQuery.value.toLowerCase();
+    result = result.filter((item) =>
+      [item.bandName, item.genre].some((field) =>
+        field?.toLowerCase().includes(q)
+      )
+    );
+  }
 
   if (selectedGenre.value !== "all") {
     result = result.filter((item) => item.genre === selectedGenre.value);
@@ -190,6 +200,7 @@ const resetFilters = () => {
   selectedDate.value = null;
   datePicker.value?.clear();
   priceRange.value = [minPrice.value, maxPrice.value];
+  searchQuery.value = "";
 };
 
 function toSpotifyEmbed(url) {
@@ -252,6 +263,13 @@ function handleClick(item) {
           />
         </div>
       </div>
+
+      <input 
+      v-model="searchQuery"
+      type="text"
+      placeholder="Søg"
+      class="filter_select glass search_input"
+      />
 
       <button
         v-if="hasActiveFilters"

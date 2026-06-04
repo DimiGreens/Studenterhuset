@@ -33,6 +33,7 @@ const contentRefs = ref({});
 const selectedEvent = ref(null);
 const sliderEvent = ref(null);
 const sliderIndex = ref(0);
+const searchQuery = ref("");
 
 const priceRange = ref([0, 500]);
 const minPrice = ref(0);
@@ -50,6 +51,7 @@ const hasActiveFilters = computed(
   () =>
     selectedKategori.value !== "all" ||
     selectedDate.value !== null ||
+    searchQuery.value.trim() !== "" ||
     priceRange.value[0] !== minPrice.value ||
     priceRange.value[1] !== maxPrice.value,
 );
@@ -101,6 +103,15 @@ const enkeltBegivenheder = computed(() => {
     const [day, month, year] = item.dato.split("/");
     return new Date(year, month - 1, day) >= today;
   });
+
+   if (searchQuery.value.trim()) {
+    const q = searchQuery.value.toLowerCase();
+    result = result.filter((item) =>
+      [item.titel, item.kategori].some((field) =>
+        field?.toLowerCase().includes(q)
+      )
+    );
+  }
 
   if (selectedKategori.value !== "all") {
     result = result.filter((item) => item.kategori === selectedKategori.value);
@@ -192,6 +203,7 @@ const resetFilters = () => {
   selectedDate.value = null;
   datePicker.value?.clear();
   priceRange.value = [minPrice.value, maxPrice.value];
+  searchQuery.value = "";
 };
 
 function handleClick(item) {
@@ -333,6 +345,13 @@ function handleClick(item) {
             />
           </div>
         </div>
+
+        <input
+        v-model="searchQuery"
+        type="text"
+        placeholder="Søg"
+        class="filter_select glass"
+        >
 
         <button
           v-if="hasActiveFilters"

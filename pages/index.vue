@@ -1,4 +1,8 @@
 <script setup>
+import { Swiper, SwiperSlide } from "swiper/vue";
+import { Pagination } from "swiper/modules";
+import "swiper/css";
+import "swiper/css/pagination";
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 import { faAngleRight } from "@fortawesome/free-solid-svg-icons";
 
@@ -35,67 +39,6 @@ const heroImgUrl = computed(() => {
 
   return `https:${asset.fields.file.url}?w=${width}&q=100&fm=webp`;
 });
-const mySlidesConcert = [
-  {
-    id: 1,
-    image: "https://picsum.photos/800/400?random=1",
-    title: "Slide title",
-    link: "/concerts",
-    buttonText: "Opdag Koncerter",
-  },
-  {
-    id: 2,
-    image: "https://picsum.photos/800/400?random=2",
-    title: "Slide title",
-    link: "/concerts",
-    buttonText: "Opdag Koncerter",
-  },
-  {
-    id: 3,
-    image: "https://picsum.photos/800/400?random=3",
-    title: "Slide title",
-    link: "/concerts",
-    buttonText: "Opdag Koncerter",
-  },
-  {
-    id: 4,
-    image: "https://picsum.photos/800/400?random=4",
-    title: "Slide title",
-    link: "/concerts",
-    buttonText: "Opdag Koncerter",
-  },
-];
-
-const mySlidesEvent = [
-  {
-    id: 1,
-    image: "https://picsum.photos/800/400?random=1",
-    title: "Slide title",
-    link: "/events",
-    buttonText: "Se Begivenheder",
-  },
-  {
-    id: 2,
-    image: "https://picsum.photos/800/400?random=2",
-    title: "Slide title",
-    link: "/events",
-    buttonText: "Se Begivenheder",
-  },
-  {
-    id: 3,
-    image: "https://picsum.photos/800/400?random=3",
-    title: "Slide title",
-    link: "/events",
-    buttonText: "Se Begivenheder",
-  },
-  {
-    id: 4,
-    image: "https://picsum.photos/800/400?random=4",
-    title: "Slide title",
-    link: "/events",
-    buttonText: "Se Begivenheder",
-  },
-];
 
 const { data: glassBox } = await useFetch("/api/contentful", {
   query: {
@@ -217,6 +160,7 @@ function goToConcert(id) {
       :hero-tagline="glassBox?.items?.[0]?.fields?.heroTagline"
     />
   </div>
+
   <div class="container container--md mt-4">
     <img src="../assets/images/Studenterhuset_logo_sort.jpg" alt="" />
     <p>
@@ -238,28 +182,53 @@ function goToConcert(id) {
       så mon ikke der en til netop dig eller dig og dine venner. Gå på opdagelse
       i vores kommende koncerter - vi glæder os til at se dig!
     </p>
-    <div class="preview_grid">
+
+    <div class="desktop_grid">
       <div
         v-for="item in kommendKoncerter"
         :key="item.id"
-        class="preview_card"
+        class="desktop_card"
         @click="goToConcert(item.id)"
       >
-        <div class="preview_image">
+        <div class="card_image">
           <img :src="item.bandImage" alt="" />
-          <span v-if="item.genre" class="preview_tag">{{ item.genre }}</span>
+          <span v-if="item.genre" class="card_tag">{{ item.genre }}</span>
         </div>
-        <div class="preview_info">
-          <p class="preview_name">{{ item.bandName }}</p>
-          <div class="preview_meta">
-            <p class="preview_date">{{ item.date }}</p>
-            <p class="preview_price">
-              {{ item.price ? item.price + ",-" : "Gratis" }}
-            </p>
+        <div class="card_info">
+          <p class="card_name">{{ item.bandName }}</p>
+          <div class="card_meta">
+            <p class="card_date">{{ item.date }}</p>
+            <p class="card_price">{{ item.price ? item.price + ",-" : "Gratis" }}</p>
           </div>
         </div>
       </div>
     </div>
+
+    <Swiper
+      :modules="[Pagination]"
+      :slides-per-view="1"
+      :space-between="16"
+      :pagination="{ clickable: true }"
+      :auto-height="true"
+      class="mobile_swiper"
+    >
+      <SwiperSlide v-for="item in kommendKoncerter" :key="item.id">
+        <div class="mobile_card" @click="goToConcert(item.id)">
+          <div class="card_image">
+            <img :src="item.bandImage" alt="" />
+            <span v-if="item.genre" class="card_tag">{{ item.genre }}</span>
+          </div>
+          <div class="card_info">
+            <p class="card_name">{{ item.bandName }}</p>
+            <div class="card_meta">
+              <p class="card_date">{{ item.date }}</p>
+              <p class="card_price">{{ item.price ? item.price + ",-" : "Gratis" }}</p>
+            </div>
+          </div>
+        </div>
+      </SwiperSlide>
+    </Swiper>
+
     <NuxtLink class="cta glass preview_cta" to="/concerts">
       Opdag Koncerter <FontAwesomeIcon :icon="faAngleRight" />
     </NuxtLink>
@@ -273,31 +242,56 @@ function goToConcert(id) {
       fredagsbar, brætspilsaften og queer night, kom ned med dine venner eller
       kom alene og bliv en del af fællesskabet.
     </p>
-    <div class="preview_grid">
+
+    <div class="desktop_grid">
       <div
         v-for="item in kommendBegivenheder"
         :key="item.id"
-        class="preview_card"
+        class="desktop_card"
         @click="goToEvent(item.id)"
       >
-        <div class="preview_image">
+        <div class="card_image">
           <img :src="item.billede" alt="" />
         </div>
-        <div class="preview_info">
-          <p class="preview_name">{{ item.titel }}</p>
-          <div class="preview_meta">
-            <p class="preview_date">{{ item.dato }}</p>
-            <p class="preview_price">
-              {{ item.pris ? item.pris + ",-" : "Gratis" }}
-            </p>
+        <div class="card_info">
+          <p class="card_name">{{ item.titel }}</p>
+          <div class="card_meta">
+            <p class="card_date">{{ item.dato }}</p>
+            <p class="card_price">{{ item.pris ? item.pris + ",-" : "Gratis" }}</p>
           </div>
         </div>
       </div>
     </div>
+
+    <Swiper
+      :modules="[Pagination]"
+      :slides-per-view="1"
+      :space-between="16"
+      :pagination="{ clickable: true }"
+      :auto-height="true"
+      class="mobile_swiper"
+    >
+      <SwiperSlide v-for="item in kommendBegivenheder" :key="item.id">
+        <div class="mobile_card" @click="goToEvent(item.id)">
+          <div class="card_image">
+            <img :src="item.billede" alt="" />
+          </div>
+          <div class="card_info">
+            <p class="card_name">{{ item.titel }}</p>
+            <div class="card_meta">
+              <p class="card_date">{{ item.dato }}</p>
+              <p class="card_price">{{ item.pris ? item.pris + ",-" : "Gratis" }}</p>
+            </div>
+          </div>
+        </div>
+      </SwiperSlide>
+    </Swiper>
+
     <NuxtLink class="cta glass preview_cta" to="/events">
       Se Begivenheder <FontAwesomeIcon :icon="faAngleRight" />
     </NuxtLink>
   </div>
+
   <div class="container container--md card card--active">
     <h2>Caféen</h2>
     <p>
@@ -315,6 +309,7 @@ function goToConcert(id) {
       Gå til caféen <FontAwesomeIcon :icon="faAngleRight" />
     </NuxtLink>
   </div>
+
   <div class="grid grid--2 mt-5 mb-5 container container--lg">
     <div class="card card--active">
       <h2>Bliv frivillig</h2>
@@ -360,48 +355,21 @@ function goToConcert(id) {
 </template>
 
 <style scoped>
-.preview_grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
-  margin: 24px 0;
-}
-
-.preview_card {
-  background: white;
-  border-radius: 16px;
-  overflow: hidden;
-  cursor: pointer;
-  transition:
-    transform 0.3s ease,
-    box-shadow 0.3s ease;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-}
-
-.preview_card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
-}
-
-.preview_image {
+.card_image {
   position: relative;
   overflow: hidden;
 }
 
-.preview_image img {
+.card_image img {
   width: 100%;
-  height: 200px;
+  height: 250px;
   object-fit: cover;
   object-position: center;
   display: block;
   transition: transform 0.3s ease;
 }
 
-.preview_card:hover .preview_image img {
-  transform: scale(1.05);
-}
-
-.preview_tag {
+.card_tag {
   position: absolute;
   top: 12px;
   left: 12px;
@@ -415,36 +383,85 @@ function goToConcert(id) {
   font-family: "Barlow Condensed", sans-serif;
 }
 
-.preview_info {
+.card_info {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
   padding: 15px;
   background: #eeeeff;
 }
 
-.preview_name {
+.card_name {
   color: #0b1071;
   font-family: "Barlow Condensed", sans-serif;
-  font-size: 28px;
+  font-size: 32px;
   font-weight: bold;
 }
 
-.preview_meta {
+.card_meta {
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
-  margin-top: 10px;
+  margin-top: 15px;
 }
 
-.preview_date {
+.card_date {
   font-family: "Barlow Condensed", sans-serif;
   color: #535353;
   font-size: 16px;
 }
 
-.preview_price {
+.card_price {
   font-family: "Barlow Condensed", sans-serif;
   font-size: 20px;
   color: #535353;
   font-weight: 600;
+}
+
+.desktop_grid {
+  display: none;
+  margin: 24px 0;
+}
+
+.desktop_card {
+  background: white;
+  border-radius: 16px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.desktop_card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+}
+
+.desktop_card:hover .card_image img {
+  transform: scale(1.05);
+}
+
+.mobile_swiper {
+  display: block;
+  margin: 24px 0 40px;
+  padding-bottom: 36px;
+}
+
+.mobile_card {
+  background: white;
+  border-radius: 16px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.mobile_card:hover .card_image img {
+  transform: scale(1.05);
+}
+
+:deep(.swiper-slide) {
+  height: auto;
 }
 
 .preview_cta {
@@ -460,9 +477,24 @@ function goToConcert(id) {
   margin-top: 8px;
 }
 
-@media (max-width: 992px) {
-  .preview_grid {
-    grid-template-columns: 1fr;
+.section_tagline {
+  font-family: "Barlow Condensed", sans-serif;
+  font-size: 16px;
+  color: #5774b8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+
+@media (min-width: 993px) {
+  .desktop_grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+
+  .mobile_swiper {
+    display: none;
   }
 }
 </style>

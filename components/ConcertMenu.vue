@@ -203,9 +203,26 @@ const resetFilters = () => {
   searchQuery.value = "";
 };
 
-function toSpotifyEmbed(url) {
+// function toSpotifyEmbed(url) {
+//   if (!url) return null;
+//   return url.replace("open.spotify.com/", "open.spotify.com/embed/");
+// }
+
+function toEmbedUrl(url) {
   if (!url) return null;
-  return url.replace("open.spotify.com/", "open.spotify.com/embed/");
+
+  // Spotify
+  if (url.includes("open.spotify.com")) {
+    return url.replace("open.spotify.com/", "open.spotify.com/embed/");
+  }
+
+  // YouTube – håndterer både youtu.be/ID og youtube.com/watch?v=ID
+  if (url.includes("youtube.com") || url.includes("youtu.be")) {
+    const match = url.match(/(?:v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+    if (match) return `https://www.youtube.com/embed/${match[1]}`;
+  }
+
+  return null;
 }
 
 function handleClick(item) {
@@ -352,13 +369,13 @@ function handleClick(item) {
           </div>
           <p class="band_info_box">{{ item.bandDescription }}</p>
           <iframe
-            v-if="item.spotifyEmbed"
-            :src="toSpotifyEmbed(item.spotifyEmbed)"
-            width="100%"
-            height="200"
-            frameborder="0"
-            loading="lazy"
-            allow="autoplay; clipboard-write; encrypted-media"
+           v-if="item.spotifyEmbed"
+  :src="toEmbedUrl(item.spotifyEmbed)"
+  width="100%"
+  height="200"
+  frameborder="0"
+  loading="lazy"
+  allow="autoplay; clipboard-write; encrypted-media; fullscreen"
           />
           <div class="button_wrapper">
             <button class="glass ticket_button">Køb billet</button>
@@ -399,13 +416,13 @@ function handleClick(item) {
                     {{ selectedConcert.bandDescription }}
                   </p>
                   <iframe
-                    v-if="selectedConcert.spotifyEmbed"
-                    :src="toSpotifyEmbed(selectedConcert.spotifyEmbed)"
-                    width="100%"
-                    height="152"
-                    frameborder="0"
-                    loading="lazy"
-                    allow="autoplay; clipboard-write; encrypted-media"
+                    v-if="item.spotifyEmbed"
+  :src="toEmbedUrl(item.spotifyEmbed)"
+  width="100%"
+  height="200"
+  frameborder="0"
+  loading="lazy"
+  allow="autoplay; clipboard-write; encrypted-media; fullscreen"
                   />
                 </div>
                 <div class="concert_info modal_info">

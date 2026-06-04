@@ -1,44 +1,7 @@
 <script setup>
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 import { faFacebook, faInstagram } from "@fortawesome/free-brands-svg-icons";
-
-const openingHours = [
-  {
-    day: "Mandag",
-    opening: "13:00",
-    closing: "22:00",
-  },
-  {
-    day: "Tirsdag",
-    opening: "13:00",
-    closing: "22:00",
-  },
-  {
-    day: "Onsdag",
-    opening: "13:00",
-    closing: "24:00",
-  },
-  {
-    day: "Torsdag",
-    opening: "13:00",
-    closing: "24:00",
-  },
-  {
-    day: "Fredag",
-    opening: "13:00",
-    closing: "02:00",
-  },
-  {
-    day: "Lørdag",
-    opening: "15:00",
-    closing: "02:00",
-  },
-  {
-    day: "Søndag",
-    opening: "Lukket",
-    closing: "",
-  },
-];
+import Logo from "../assets/images/Studenterhuset_logo.svg?component";
 </script>
 
 <template>
@@ -61,6 +24,8 @@ const openingHours = [
           <p class="footer_heading">Kontakt</p>
           <p>+45 31 41 04 74</p>
           <p>kontoret@studenterhuset.dk</p>
+          <p>Gammeltorv 10</p>
+          <p>9000 Aalborg</p>
         </div>
 
         <div class="footer_hours">
@@ -70,26 +35,23 @@ const openingHours = [
 
       <!-- BOTTOM ROW -->
       <div class="footer_bottom">
+        <Logo class="logo" alt="Studenterhuset logo" />
+
         <div class="footer_brand">
-          <p class="footer_heading">Studenterhuset©</p>
-          <p>Gammeltorv 10</p>
-          <p>9000 Aalborg</p>
           <div class="footer_legal">
             <a href="#">Cookiepolitik</a>
             <a href="#">Terms and conditions</a>
+            <p class="footer_heading">Studenterhuset©</p>
           </div>
         </div>
 
         <div class="footer_social">
-          <p class="footer_heading">Find os på:</p>
           <div class="social_icons">
             <a href="#" target="_blank">
               <FontAwesomeIcon :icon="faFacebook" />
-              <span>Facebook</span>
             </a>
             <a href="#" target="_blank">
               <FontAwesomeIcon :icon="faInstagram" />
-              <span>Instagram</span>
             </a>
           </div>
         </div>
@@ -101,19 +63,13 @@ const openingHours = [
 <style scoped>
 .site_footer {
   background-color: #5774b8;
-  padding: 40px 20px;
   color: white;
 }
 
 .footer_inner {
-  max-width: 1050px;
+  padding: 50px 150px;
   margin: 0 auto;
-}
-
-.footer_heading {
-  font-size: 20px;
-  font-weight: 600;
-  margin-bottom: 12px;
+  box-sizing: border-box;
 }
 
 p,
@@ -137,6 +93,15 @@ a {
 @media (min-width: 670px) {
   .footer_top {
     grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .footer_inner {
+    padding: 30px 20px;
+    .footer_social {
+      margin: 0 auto;
+    }
   }
 }
 
@@ -167,8 +132,11 @@ a {
 .footer_bottom {
   display: flex;
   flex-direction: column;
-  gap: 32px;
-  align-items: flex-start;
+  gap: 16px;
+
+  svg {
+    max-width: 400px;
+  }
 }
 
 @media (min-width: 670px) {
@@ -194,11 +162,11 @@ a {
   display: flex;
   gap: 16px;
   margin-top: 8px;
-}
+  font-family: "inter", sans-serif;
 
-.footer_legal a {
-  font-size: 14px;
-  opacity: 0.8;
+  a {
+    font-size: 16px;
+  }
 }
 
 /* Social icons */

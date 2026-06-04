@@ -22,195 +22,61 @@ const mySlides = [
   },
 ];
 
-const menuItem = [
-  {
-    id: 1,
-    day: "Hverdage",
-    drinks: [
-      {
-        name: "Kaffe/Te",
-        studiepris: 15,
-        normalpris: 25,
-      },
-      {
-        name: "To-go Kaffe/Te",
-        studiepris: 20,
-        normalpris: 20,
-      },
-      {
-        name: "Royal Pilsner",
-        studiepris: 35,
-        normalpris: 40,
-      },
-      {
-        name: "Royal Classic",
-        studiepris: 40,
-        normalpris: 45,
-      },
-      {
-        name: "Sodavand",
-        studiepris: 20,
-        normalpris: 25,
-      },
-    ],
-  },
-  {
-    id: 2,
-    day: "Onsdagspriser",
-    drinks: [
-      {
-        name: "Royal Pilsner",
-        studiepris: 25,
-        normalpris: 40,
-      },
-      {
-        name: "Royal Classic",
-        studiepris: 30,
-        normalpris: 45,
-      },
-      {
-        name: "Sodavand",
-        studiepris: 20,
-        normalpris: 25,
-      },
-    ],
-  },
-  {
-    id: 3,
-    day: "Fredagsbar",
-    drinks: [
-      {
-        name: "Royal Pilsner",
-        studiepris: 20,
-        normalpris: 40,
-      },
-      {
-        name: "Gin & Tonic",
-        studiepris: 25,
-        normalpris: 45,
-      },
-      {
-        name: "Sodavand",
-        studiepris: 15,
-        normalpris: 25,
-      },
-      {
-        name: "Drinks",
-        drinkNames: ["Gin & tonic", "Rum & Coke", "Vodka & Juice"],
-        alcoholLabel: "Med alkohol",
-        studiepris: 40,
-        normalpris: 45,
-      },
-      {
-        name: "Drinks",
-        drinkNames: ["Gin & tonic", "Rum & Coke", "Vodka & Juice"],
-        alcoholLabel: "Uden alkohol",
-        studiepris: 40,
-        normalpris: 45,
-      },
-    ],
-  },
-];
-
-const openingHours = [
-  {
-    day: "Mandag",
-    opening: "13:00",
-    closing: "22:00",
-  },
-  {
-    day: "Tirsdag",
-    opening: "13:00",
-    closing: "22:00",
-  },
-  {
-    day: "Onsdag",
-    opening: "13:00",
-    closing: "24:00",
-  },
-  {
-    day: "Torsdag",
-    opening: "13:00",
-    closing: "24:00",
-  },
-  {
-    day: "Fredag",
-    opening: "13:00",
-    closing: "02:00",
-  },
-  {
-    day: "Lørdag",
-    opening: "15:00",
-    closing: "02:00",
-  },
-  {
-    day: "Søndag",
-    opening: "Lukket",
-    closing: "",
-  },
-];
-
 const { data: heroBillede } = await useFetch("/api/contentful", {
-  query: { contentType: "heroBillede", include: 1, "fields.billedtitel": "Cafeen Hero" },
+  query: {
+    contentType: "heroBillede",
+    include: 1,
+    "fields.billedtitel": "Cafeen Hero",
+  },
 });
 
-const screenWidth = ref(1920)
+const screenWidth = ref(1920);
 
 onMounted(() => {
-  screenWidth.value = window.innerWidth
-})
+  screenWidth.value = window.innerWidth;
+});
 
 const heroImgUrl = computed(() => {
-  const item = heroBillede.value?.items?.[0]
-  const assetId = item?.fields?.heroImg?.[0]?.sys?.id
-  const asset = heroBillede.value?.includes?.Asset?.find(a => a.sys.id === assetId)
-  if (!asset) return null
+  const item = heroBillede.value?.items?.[0];
+  const assetId = item?.fields?.heroImg?.[0]?.sys?.id;
+  const asset = heroBillede.value?.includes?.Asset?.find(
+    (a) => a.sys.id === assetId,
+  );
+  if (!asset) return null;
 
-  let width
+  let width;
   if (screenWidth.value < 992) {
-    width = 600
+    width = 600;
   } else if (screenWidth.value < 1510) {
-    width = 992
+    width = 992;
   } else {
-    width = 1920
+    width = 1920;
   }
 
-  return `https:${asset.fields.file.url}?w=${width}&q=80&fm=webp`
-})
+  return `https:${asset.fields.file.url}?w=${width}&q=80&fm=webp`;
+});
 
 const { data: glassBox } = await useFetch("/api/contentful", {
-  query: { contentType: "heroGlassBox", include: 1, "fields.titel": "Glass box cafeen" },
+  query: {
+    contentType: "heroGlassBox",
+    include: 1,
+    "fields.titel": "Glass box cafeen",
+  },
 });
 </script>
 <template>
   <body>
-    <div class="hero full-bleed container container-md"
-  :style="heroImgUrl ? { backgroundImage: `url(${heroImgUrl})` } : {}">
-    <HeroGlassBox 
-    :heading="glassBox?.items?.[0]?.fields?.heading"
-    :hero-tagline="glassBox?.items?.[0]?.fields?.heroTagline"
-  />
-  </div>
-    <div class="container container--md">
-      <h1>Caféen</h1>
-      <p>
-        Tag et smut forbi caféen hos Studenterhuset og nyd et bredt udvalg af
-        drikkevarer, både med og uden alkohol, til gode studievenlige priser.
-        Udover de prisvenlige drinks byder caféen også på masser af hyggelige
-        aktiviteter som brætspil, pool, bordfodbold og meget mere, som alle
-        gæster frit kan benytte. Så hvis du leder efter et sted med god
-        stemning, afslappet atmosfære og plads til hygge med vennerne, er caféen
-        i Studenterhuset det perfekte sted at kigge forbi!
-      </p>
+    <div
+      class="hero full-bleed container container-md"
+      :style="heroImgUrl ? { backgroundImage: `url(${heroImgUrl})` } : {}"
+    >
+      <HeroGlassBox
+        :heading="glassBox?.items?.[0]?.fields?.heading"
+        :hero-tagline="glassBox?.items?.[0]?.fields?.heroTagline"
+      />
     </div>
     <div>
-      <ImageSlider :slides="mySlides" />
-    </div>
-    <div class="container container--md mt-5 mb-5">
       <Menu :menuItem="menuItem" />
-      <div class="container container-md">
-        <OpeningHours :openingHours="openingHours" />
-      </div>
     </div>
     <div class="container container--md card card--active mb-5">
       <h2>Bliv frivillig</h2>

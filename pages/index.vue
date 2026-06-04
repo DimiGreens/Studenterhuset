@@ -14,7 +14,7 @@ const { data: heroBillede } = await useFetch("/api/contentful", {
   },
 });
 
-const screenWidth = ref<number | null>(null);
+const screenWidth = ref(null);
 
 onMounted(() => {
   screenWidth.value = window.innerWidth;
@@ -201,7 +201,9 @@ function goToConcert(id) {
           <p class="card_name">{{ item.bandName }}</p>
           <div class="card_meta">
             <p class="card_date">{{ item.date }}</p>
-            <p class="card_price">{{ item.price ? item.price + ",-" : "Gratis" }}</p>
+            <p class="card_price">
+              {{ item.price ? item.price + ",-" : "Gratis" }}
+            </p>
           </div>
         </div>
       </div>
@@ -225,7 +227,9 @@ function goToConcert(id) {
             <p class="card_name">{{ item.bandName }}</p>
             <div class="card_meta">
               <p class="card_date">{{ item.date }}</p>
-              <p class="card_price">{{ item.price ? item.price + ",-" : "Gratis" }}</p>
+              <p class="card_price">
+                {{ item.price ? item.price + ",-" : "Gratis" }}
+              </p>
             </div>
           </div>
         </div>
@@ -260,7 +264,9 @@ function goToConcert(id) {
           <p class="card_name">{{ item.titel }}</p>
           <div class="card_meta">
             <p class="card_date">{{ item.dato }}</p>
-            <p class="card_price">{{ item.pris ? item.pris + ",-" : "Gratis" }}</p>
+            <p class="card_price">
+              {{ item.pris ? item.pris + ",-" : "Gratis" }}
+            </p>
           </div>
         </div>
       </div>
@@ -283,7 +289,9 @@ function goToConcert(id) {
             <p class="card_name">{{ item.titel }}</p>
             <div class="card_meta">
               <p class="card_date">{{ item.dato }}</p>
-              <p class="card_price">{{ item.pris ? item.pris + ",-" : "Gratis" }}</p>
+              <p class="card_price">
+                {{ item.pris ? item.pris + ",-" : "Gratis" }}
+              </p>
             </div>
           </div>
         </div>
@@ -431,7 +439,9 @@ function goToConcert(id) {
   border-radius: 16px;
   overflow: hidden;
   cursor: pointer;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
 }
 
@@ -455,7 +465,9 @@ function goToConcert(id) {
   border-radius: 16px;
   overflow: hidden;
   cursor: pointer;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
 }
 

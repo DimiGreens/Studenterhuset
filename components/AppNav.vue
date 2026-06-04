@@ -2,7 +2,7 @@
 import { ref, onMounted, onUnmounted, watch } from "vue";
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 import { faBars, faXmark } from "@fortawesome/free-solid-svg-icons";
-import Logo from '../assets/images/Studenterhuset_logo.svg?component'
+import Logo from '../assets/images/Studenterhuset_logo.svg?component';
 
 const route = useRoute();
 

@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from "vue";
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
+import FilterLogo from '../assets/images/Filter.svg?component';
 
 import {
   faAngleDown,
@@ -9,6 +10,7 @@ import {
   faExpand,
   faXmark,
   faBars,
+  faChevronDown,
 } from "@fortawesome/free-solid-svg-icons";
 
 import flatpickr from "flatpickr";
@@ -48,18 +50,19 @@ const priceRange = ref([0, 500]);
 const minPrice = ref(0);
 const maxPrice = ref(500);
 
+// Udregner placering og bredde af den udfyldte del af slideren
+const rangeFillStyle = computed(() => {
+  const span = (maxPrice.value - minPrice.value) || 1;
+  const left = ((priceRange.value[0] - minPrice.value) / span) * 100;
+  const right = ((priceRange.value[1] - minPrice.value) / span) * 100;
+  return { left: `${left}%`, width: `${right - left}%` };
+});
+
 const availableGenres = computed(() => {
   const genres = props.concert.map((c) => c.genre).filter(Boolean);
   return [...new Set(genres)].sort();
 });
 
-const hasActiveFilters = computed(
-  () =>
-    selectedGenre.value !== "all" ||
-    selectedDate.value !== null ||
-    priceRange.value[0] !== minPrice.value ||
-    priceRange.value[1] !== maxPrice.value,
-);
 
 function clampMin() {
   if (priceRange.value[0] > priceRange.value[1])
@@ -257,11 +260,6 @@ const resetFilters = () => {
   searchQuery.value = "";
 };
 
-// function toSpotifyEmbed(url) {
-//   if (!url) return null;
-//   return url.replace("open.spotify.com/", "open.spotify.com/embed/");
-// }
-
 function toEmbedUrl(url) {
   if (!url) return null;
 
@@ -290,36 +288,51 @@ console.log(selectedConcert.value);
 
 <template>
   <div class="concert-section container container--lg">
-    <button class="filter_toggle glass" @click="filterOpen = !filterOpen">
+    <div class="filter_button_search_wrapper">
+    <button class="filter_toggle" @click="filterOpen = !filterOpen">
       <span>Filter</span>
-      <FontAwesomeIcon :icon="filterOpen ? faXmark : faBars" />
+      <FontAwesomeIcon class="filter_icon" v-if="filterOpen" :icon="faXmark" />
+<FilterLogo class="filter_icon" v-else />
     </button>
 
+    <input
+        v-model="searchQuery"
+        type="text"
+        placeholder="Søg"
+        class="filter_field search_input"
+      />
+</div>
     <div class="filter_panel" :class="{ open: filterOpen }">
       <div class="filter_panel_header">
         <p>Filter</p>
-        <button class="filter_close glass" @click="filterOpen = false">
+        <button class="filter_close" @click="filterOpen = false">
           <FontAwesomeIcon :icon="faXmark" />
         </button>
       </div>
-
-      <select v-model="selectedGenre" class="filter_select glass">
+      <div class="select_wrapper">
+      <select v-model="selectedGenre" class="filter_select">
         <option value="all">Alle genrer</option>
         <option v-for="genre in availableGenres" :key="genre" :value="genre">
           {{ genre }}
         </option>
       </select>
-
+<FontAwesomeIcon :icon="faChevronDown" class="select_chevron" />
+</div>
       <input
         ref="dateInput"
-        class="filter_select glass"
+        class="filter_field filter_select date_select"
         placeholder="Alle datoer"
         readonly
       />
 
       <div class="price_slider">
-        <p class="price_label">{{ priceRange[0] }},- – {{ priceRange[1] }},-</p>
+        <div class="price_label_wrapper">
+        <p class="price_label">{{ priceRange[0] }},-</p>
+        <p class="price_label">{{ priceRange[1] }},-</p>
+        </div>
         <div class="range_track">
+          <div class="range_base"></div>
+          <div class="range_fill" :style="rangeFillStyle"></div>
           <input
             type="range"
             :min="minPrice"
@@ -337,16 +350,8 @@ console.log(selectedConcert.value);
         </div>
       </div>
 
-      <input 
-      v-model="searchQuery"
-      type="text"
-      placeholder="Søg"
-      class="filter_select glass search_input"
-      />
-
       <button
-        v-if="hasActiveFilters"
-        class="glass reset_button"
+        class="reset_button"
         @click="resetFilters"
       >
         Nulstil filtre
@@ -375,14 +380,14 @@ console.log(selectedConcert.value);
 
         <div class="concert_info">
           <div
-  class="band_cardName"
-  :ref="el => setTitleRef(el, item.id)"
-  :class="{ overflowing: overflowingTitles[item.id] }"
->
-  <span :style="{ '--scroll-distance': `${scrollDistances[item.id] || 0}px` }">
-    {{ item.bandName }}
-  </span>
-</div>
+            class="band_cardName"
+            :ref="el => setTitleRef(el, item.id)"
+            :class="{ overflowing: overflowingTitles[item.id] }"
+          >
+            <span :style="{ '--scroll-distance': `${scrollDistances[item.id] || 0}px` }">
+              {{ item.bandName }}
+            </span>
+          </div>
           <div class="band_dateAndPrice" v-show="openId !== item.id">
             <p class="band_cardDate">{{ item.date }}</p>
             <p class="band_cardPrice">
@@ -441,17 +446,17 @@ console.log(selectedConcert.value);
           </div>
           <p class="band_info_box">{{ item.bandDescription }}</p>
           <iframe
-           v-if="item.spotifyEmbed"
-  :src="toEmbedUrl(item.spotifyEmbed)"
-  :class="[
-    'media-embed',
-    `media-embed--${getEmbedType(item.spotifyEmbed)}`
-  ]"
-  width="100%"
-  height="180"
-  frameborder="0"
-  loading="lazy"
-  allow="autoplay; clipboard-write; encrypted-media; fullscreen"
+            v-if="item.spotifyEmbed"
+            :src="toEmbedUrl(item.spotifyEmbed)"
+            :class="[
+              'media-embed',
+              `media-embed--${getEmbedType(item.spotifyEmbed)}`
+            ]"
+            width="100%"
+            height="180"
+            frameborder="0"
+            loading="lazy"
+            allow="autoplay; clipboard-write; encrypted-media; fullscreen"
           />
           <div class="button_wrapper">
             <button class="glass ticket_button">Køb billet</button>
@@ -491,16 +496,16 @@ console.log(selectedConcert.value);
                   <h3>{{ selectedConcert.concertName }}</h3>
                   <p class="band_info_box" v-html="selectedConcert.bandDescription"></p>
                   <iframe
-                   v-if="selectedConcert.spotifyEmbed"
-  :src="toEmbedUrl(selectedConcert.spotifyEmbed)"
-  :class="[
-    'media-embed',
-    `media-embed--${getEmbedType(selectedConcert.spotifyEmbed)}`
-  ]"
-  width="100%"
-  frameborder="0"
-  loading="lazy"
-  allow="autoplay; clipboard-write; encrypted-media; fullscreen"
+                    v-if="selectedConcert.spotifyEmbed"
+                    :src="toEmbedUrl(selectedConcert.spotifyEmbed)"
+                    :class="[
+                      'media-embed',
+                      `media-embed--${getEmbedType(selectedConcert.spotifyEmbed)}`
+                    ]"
+                    width="100%"
+                    frameborder="0"
+                    loading="lazy"
+                    allow="autoplay; clipboard-write; encrypted-media; fullscreen"
                   />
                 </div>
                 <div class="concert_info modal_info">
@@ -832,23 +837,45 @@ to   { transform: translateX(calc(var(--scroll-distance) * -1)); }
   justify-content: center;
 }
 
+/* ---------- FILTER ---------- */
+
 .filter_toggle {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 10px;
   height: 50px;
   padding: 0 24px;
   font-size: 20px;
   color: white;
-  font-family: "Barlow Condensed", sans-serif;
+  font-family: "Inter", sans-serif;
   cursor: pointer;
   border: none;
+  border-radius: 100px;
+  background: var(--primary);
   margin: 20px 0;
 
   svg {
-    width: 20px;
-    height: 20px;
+    width: 25px;
+    height: 25px;
   }
+}
+.filter_icon {
+  width: 16px;
+  height: 16px;
+}
+
+.select_wrapper {
+  position: relative;
+  display: inline-flex;
+}
+.select_chevron {
+  position: absolute;
+  top: 50%;
+  right: 18px;
+  transform: translateY(-50%);
+  color: white;
+  pointer-events: none;
 }
 
 .filter_panel {
@@ -860,6 +887,9 @@ to   { transform: translateX(calc(var(--scroll-distance) * -1)); }
 
 .filter_panel.open {
   display: flex;
+  background-color: #eeeeff;
+  padding: 30px;
+  gap: 25px;
 }
 
 .filter_panel_header {
@@ -869,8 +899,8 @@ to   { transform: translateX(calc(var(--scroll-distance) * -1)); }
 
   p {
     font-size: 24px;
-    font-family: "Barlow Condensed", sans-serif;
-    color: white;
+    font-family: "Inter", sans-serif;
+    color: black;
   }
 }
 
@@ -881,6 +911,8 @@ to   { transform: translateX(calc(var(--scroll-distance) * -1)); }
   font-size: 18px;
   cursor: pointer;
   border: none;
+  border-radius: 50%;
+  background: var(--primary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -891,39 +923,107 @@ to   { transform: translateX(calc(var(--scroll-distance) * -1)); }
   }
 }
 
+.filter_field {
+  height: 56px;
+  font-size: 18px;
+  padding: 0 20px;
+  border: none;
+  outline: none;
+  border-radius: 100px;
+  font-family: "Inter", sans-serif;
+}
+
 .filter_select {
   width: 100%;
   height: 56px;
-  font-size: 20px;
+  font-size: 18px;
   color: white;
   padding: 0 20px;
   cursor: pointer;
   border: none;
   outline: none;
-  font-family: "Barlow Condensed", sans-serif;
-  background: rgba(87, 116, 184, 0.6);
+  border-radius: 100px;
+  font-family: "Inter", sans-serif;
+  background: var(--primary);
+}
+
+.search_input {
+  background: white;
+  color: #111;
+}
+
+.filter_button_search_wrapper {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  align-items: center;
+  column-gap: 30px;
+}
+
+/* Hvid placeholder-tekst på alle filterfelter (inkl. "Alle datoer") */
+.filter_select::placeholder {
+  color: #fff;
+  opacity: 1;
+}
+
+/* Genre-select: chevron + delelinje på primary-baggrund */
+select.filter_select {
+  -webkit-appearance: none;
+  appearance: none;
+  background-color: var(--primary);
+  /* background-repeat: no-repeat, no-repeat; */
+  /* background-position: right 44px center, right 18px center; */
+  /* background-size: 1px 60%, 16px; */
+  padding-right: 56px;
 }
 
 .price_label {
-  color: white;
+  color: black;
   font-size: 18px;
-  font-family: "Barlow Condensed", sans-serif;
+  font-family: "Inter", sans-serif;
   margin-bottom: 8px;
 }
 
+.price_label_wrapper {
+  display: flex;
+  justify-content: space-between;
+}
+
 .reset_button {
-  height: 50px;
-  padding: 0 20px;
+  height: 56px;
+  padding: 0 24px;
   color: white;
   font-size: 18px;
-  font-family: "Barlow Condensed", sans-serif;
+  font-family: "Inter", sans-serif;
   cursor: pointer;
   border: none;
+  border-radius: 100px;
+  background: var(--primary);
 }
 
 .range_track {
   position: relative;
   height: 2rem;
+}
+
+/* Grundstreg og udfyldt segment ligger bag de to range-inputs */
+.range_base,
+.range_fill {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 4px;
+  border-radius: 2px;
+  pointer-events: none;
+}
+
+.range_base {
+  left: 0;
+  right: 0;
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.range_fill {
+  background: var(--primary);
 }
 
 .range_track input[type="range"] {
@@ -949,15 +1049,16 @@ to   { transform: translateX(calc(var(--scroll-distance) * -1)); }
   border: 3px solid #5774b8;
 }
 
+/* Inputtenes egne spor gøres gennemsigtige, så range_base/range_fill tegner stregen */
 .range_track input[type="range"]::-webkit-slider-runnable-track {
   height: 4px;
-  background: rgba(255, 255, 255, 0.5);
+  background: transparent;
   border-radius: 2px;
 }
 
 .range_track input[type="range"]::-moz-range-track {
   height: 4px;
-  background: rgba(255, 255, 255, 0.5);
+  background: transparent;
   border-radius: 2px;
 }
 
@@ -974,11 +1075,16 @@ to   { transform: translateX(calc(var(--scroll-distance) * -1)); }
     display: flex !important;
     flex-direction: row;
     align-items: center;
-    flex-wrap: wrap;
-    border-radius: 100px;
-    padding: 12px 24px;
-    gap: 20px;
+    flex-wrap: nowrap;
+    width: 100%;
+    padding: none;
+    gap: 16px;
     margin-bottom: 30px;
+  }
+
+  .open {
+    padding: 0;
+    background-color: none;
   }
 
   .filter_panel_header {
@@ -986,13 +1092,16 @@ to   { transform: translateX(calc(var(--scroll-distance) * -1)); }
   }
 
   .filter_select {
-    width: auto;
-    min-width: 180px;
     height: 50px;
   }
 
-  .price_slider {
+  /* Dato og søg sluger den ledige plads, så rækken fylder hele bredden */
+  .date_select,
+  .search_input {
+    flex: 1;
+  }
 
+  .price_slider {
     min-width: 220px;
   }
 

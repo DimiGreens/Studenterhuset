@@ -167,6 +167,22 @@ onMounted(() => {
   }
 });
 
+function getEmbedType(url) {
+  if (!url) return null;
+
+  if (url.includes("open.spotify.com")) {
+    return "spotify";
+  }
+
+  if (url.includes("youtube.com") || url.includes("youtu.be")) {
+    return "youtube";
+  }
+
+  console.log(getEmbedType);
+
+  return null;
+}
+
 onUnmounted(() => {
   document.body.style.overflow = "";
 });
@@ -371,8 +387,12 @@ function handleClick(item) {
           <iframe
            v-if="item.spotifyEmbed"
   :src="toEmbedUrl(item.spotifyEmbed)"
+  :class="[
+    'media-embed',
+    `media-embed--${getEmbedType(item.spotifyEmbed)}`
+  ]"
   width="100%"
-  height="200"
+  height="180"
   frameborder="0"
   loading="lazy"
   allow="autoplay; clipboard-write; encrypted-media; fullscreen"
@@ -416,10 +436,13 @@ function handleClick(item) {
                     {{ selectedConcert.bandDescription }}
                   </p>
                   <iframe
-                    v-if="item.spotifyEmbed"
-  :src="toEmbedUrl(item.spotifyEmbed)"
+                   v-if="selectedConcert.spotifyEmbed"
+  :src="toEmbedUrl(selectedConcert.spotifyEmbed)"
+  :class="[
+    'media-embed',
+    `media-embed--${getEmbedType(selectedConcert.spotifyEmbed)}`
+  ]"
   width="100%"
-  height="200"
   frameborder="0"
   loading="lazy"
   allow="autoplay; clipboard-write; encrypted-media; fullscreen"
@@ -643,6 +666,20 @@ function handleClick(item) {
     padding 0.3s ease;
   background-color: #eeeeff;
   padding: 0 20px;
+}
+
+.media-embed {
+  width: 100%;
+  border: none;
+  border-radius: 12px;
+}
+
+.media-embed--spotify {
+  height: 152px;
+}
+
+.media-embed--youtube {
+  aspect-ratio: 16 / 9;
 }
 
 .mobile_infobox {

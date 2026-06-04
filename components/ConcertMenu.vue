@@ -375,6 +375,7 @@ console.log(selectedConcert.value);
           <img :src="item.bandImage" alt="" />
           <span class="concert_genre_tag">{{ item.genre }}</span>
           <div class="concert_button_wrapper">
+            <a href=""></a>
             <button class="concert_button glass" @click.stop="toggle(item.id)">
               <FontAwesomeIcon
                 :icon="faAngleDown"
@@ -465,7 +466,7 @@ console.log(selectedConcert.value);
             allow="autoplay; clipboard-write; encrypted-media; fullscreen"
           />
           <div class="button_wrapper">
-            <button class="glass ticket_button">Køb billet</button>
+            <a :href="item.ticketLink" target="_blank" class="glass ticket_button">Køb billet</a>
           </div>
         </div>
       </div>
@@ -541,7 +542,7 @@ console.log(selectedConcert.value);
                     <p>{{ selectedConcert.note }}</p>
                   </div>
                   <div class="button_wrapper">
-                    <button class="glass ticket_button">Køb billet</button>
+                    <a :href="selectedConcert.ticketLink" target="_blank" class="glass ticket_button">Køb billet</a>
                   </div>
                 </div>
               </div>
@@ -841,6 +842,7 @@ to   { transform: translateX(calc(var(--scroll-distance) * -1)); }
   font-family: "Barlow Condensed", sans-serif;
   margin-top: 8px;
   margin-bottom: 16px;
+  text-decoration: none;
 }
 
 .button_wrapper {

@@ -174,6 +174,7 @@ onMounted(async () => {
 
     datePicker.value = flatpickr(dateInput.value, {
       dateFormat: "d/m/Y",
+      disableMobile: true,
       onChange: (selectedDates, dateStr) => {
         selectedDate.value = dateStr;
       },

@@ -43,6 +43,7 @@ const begivenheder = (data.value?.items ?? []).map((item) => {
     billede: Array.isArray(f.billeder) ? resolveAsset(f.billeder[0]) : null,
     dato: formatDate(f.dato),
     tid: formatTime(f.dato),
+    kategori: Array.isArray(f.kategori) ? f.kategori[0] ?? null : f.kategori ?? null,
     venue: f.venue ?? "",
     pris: f.pris ?? null,
     note: f.note ?? "",

@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from "vue";
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
+import FilterLogo from '../assets/images/Filter.svg?component';
 import {
   faAngleDown,
   faAngleRight,
@@ -9,6 +10,7 @@ import {
   faXmark,
   faRotate,
   faBars,
+  faChevronDown,
 } from "@fortawesome/free-solid-svg-icons";
 
 import flatpickr from "flatpickr";
@@ -41,6 +43,14 @@ const scrollDistances = ref({});
 const priceRange = ref([0, 500]);
 const minPrice = ref(0);
 const maxPrice = ref(500);
+
+// Udregner placering og bredde af den udfyldte del af slideren
+const rangeFillStyle = computed(() => {
+  const span = (maxPrice.value - minPrice.value) || 1;
+  const left = ((priceRange.value[0] - minPrice.value) / span) * 100;
+  const right = ((priceRange.value[1] - minPrice.value) / span) * 100;
+  return { left: `${left}%`, width: `${right - left}%` };
+});
 
 const availableKategorier = computed(() => {
   const kategorier = props.events
@@ -98,14 +108,10 @@ const fasteBegivenheder = computed(() => {
 
 const setTitleRef = (el, id) => {
   if (!el) return;
-
   titleRefs.value[id] = el;
-
   const span = el.querySelector("span");
   if (!span) return;
-
   const distance = span.scrollWidth - el.clientWidth;
-
   overflowingTitles.value[id] = distance > 0;
   scrollDistances.value[id] = distance;
 };
@@ -114,9 +120,7 @@ const calculateOverflow = () => {
   Object.entries(titleRefs.value).forEach(([id, el]) => {
     const span = el.querySelector("span");
     if (!span) return;
-
     const distance = span.scrollWidth - el.clientWidth;
-
     overflowingTitles.value[id] = distance > 0;
     scrollDistances.value[id] = distance;
   });
@@ -125,55 +129,21 @@ const calculateOverflow = () => {
 onMounted(async () => {
   await nextTick();
   calculateOverflow();
-
   window.addEventListener("resize", calculateOverflow);
-});
 
-onUnmounted(() => {
-  window.removeEventListener("resize", calculateOverflow);
-});
-
-const enkeltBegivenheder = computed(() => {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  let result = allEvents.value.filter((item) => {
-    if (item.fastBegivenhed) return false;
-    if (!item.dato) return false;
-    const [day, month, year] = item.dato.split("/");
-    return new Date(year, month - 1, day) >= today;
-  });
-
-   if (searchQuery.value.trim()) {
-    const q = searchQuery.value.toLowerCase();
-    result = result.filter((item) =>
-      [item.titel, item.kategori].some((field) =>
-        field?.toLowerCase().includes(q)
-      )
-    );
-  }
-
-  if (selectedKategori.value !== "all") {
-    result = result.filter((item) => item.kategori === selectedKategori.value);
-  }
-
-  if (selectedDate.value) {
-    result = result.filter((item) => item.dato === selectedDate.value);
-  }
-
-  result = result.filter(
-    (item) =>
-      (item.pris ?? 0) >= priceRange.value[0] &&
-      (item.pris ?? 0) <= priceRange.value[1],
-  );
-
-  return result;
-});
-
-onMounted(() => {
   if (dateInput.value) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
     const eventDates = new Set(
-      props.events.filter((e) => !e.fastBegivenhed).map((e) => e.dato),
+      props.events
+    .filter((e) => {
+      if (e.fastBegivenhed) return false;
+      if (!e.dato) return false;
+      const [day, month, year] = e.dato.split("/");
+      return new Date(year, month - 1, day) >= today;
+    })
+    .map((e) => e.dato),
     );
 
     datePicker.value = flatpickr(dateInput.value, {
@@ -190,9 +160,7 @@ onMounted(() => {
         const formatted = `${day}/${month}/${year}`;
 
         if (eventDates.has(formatted)) {
-          const dot = document.createElement("span");
-          dot.classList.add("event-dot");
-          dayElem.appendChild(dot);
+          dayElem.classList.add("has-event");
         }
       },
     });
@@ -216,7 +184,45 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
+  window.removeEventListener("resize", calculateOverflow);
   document.body.style.overflow = "";
+});
+
+const enkeltBegivenheder = computed(() => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  let result = allEvents.value.filter((item) => {
+    if (item.fastBegivenhed) return false;
+    if (!item.dato) return false;
+    const [day, month, year] = item.dato.split("/");
+    return new Date(year, month - 1, day) >= today;
+  });
+
+  if (searchQuery.value.trim()) {
+    const q = searchQuery.value.toLowerCase();
+    result = result.filter((item) =>
+      [item.titel, item.kategori].some((field) =>
+        field?.toLowerCase().includes(q)
+      )
+    );
+  }
+
+  if (selectedKategori.value !== "all") {
+    result = result.filter((item) => item.kategori === selectedKategori.value);
+  }
+
+  if (selectedDate.value) {
+    result = result.filter((item) => item.dato === selectedDate.value);
+  }
+
+  result = result.filter(
+    (item) =>
+      (item.pris ?? 0) >= priceRange.value[0] &&
+      (item.pris ?? 0) <= priceRange.value[1],
+  );
+
+  return result;
 });
 
 watch(
@@ -287,10 +293,10 @@ function handleClick(item) {
           </div>
 
           <div class="event_info">
-            <div 
-            class="event_cardName"
-  :ref="el => setTitleRef(el, item.id)"
-  :class="{ overflowing: overflowingTitles[item.id] }"
+            <div
+              class="event_cardName"
+              :ref="el => setTitleRef(el, item.id)"
+              :class="{ overflowing: overflowingTitles[item.id] }"
             >
               <span :style="{ '--scroll-distance': `${scrollDistances[item.id] || 0}px` }">
                 {{ item.titel }}
@@ -305,18 +311,11 @@ function handleClick(item) {
           </div>
 
           <div
-            :ref="
-              (el) => {
-                if (el) contentRefs[item.id] = el;
-              }
-            "
+            :ref="(el) => { if (el) contentRefs[item.id] = el; }"
             class="event_content"
             :style="
               openId === item.id
-                ? {
-                    maxHeight: contentRefs[item.id]?.scrollHeight + 'px',
-                    paddingBottom: '20px',
-                  }
+                ? { maxHeight: contentRefs[item.id]?.scrollHeight + 'px', paddingBottom: '20px' }
                 : { maxHeight: '0px', paddingBottom: '0px' }
             "
           >
@@ -338,17 +337,12 @@ function handleClick(item) {
                 <p>{{ item.pris ? item.pris + ",-" : "Gratis" }}</p>
               </div>
               <div class="infoText note">
-              <p>{{ item.note }}</p>
-            </div>
+                <p>{{ item.note }}</p>
+              </div>
             </div>
             <p class="event_info_box">{{ item.beskrivelse }}</p>
             <div v-if="item.billetLink" class="button_wrapper">
-              <a
-                :href="item.billetLink"
-                target="_blank"
-                class="glass ticket_button"
-                >Køb billet</a
-              >
+              <a :href="item.billetLink" target="_blank" class="glass ticket_button">Køb billet</a>
             </div>
           </div>
         </div>
@@ -358,38 +352,54 @@ function handleClick(item) {
     <section class="event_section_group">
       <h2 class="section_heading">Kommende begivenheder</h2>
 
-      <button class="filter_toggle glass" @click="filterOpen = !filterOpen">
-        <span>Filter</span>
-        <FontAwesomeIcon :icon="filterOpen ? faXmark : faBars" />
-      </button>
+      <div class="filter_button_search_wrapper">
+        <button class="filter_toggle" @click="filterOpen = !filterOpen">
+          <span>Filter</span>
+          <FontAwesomeIcon class="filter_icon" v-if="filterOpen" :icon="faXmark" />
+          <FilterLogo class="filter_icon" v-else />
+        </button>
 
-      <div class="filter_panel glass" :class="{ open: filterOpen }">
+        <input
+          v-model="searchQuery"
+          type="text"
+          placeholder="Søg"
+          class="filter_field search_input mobile_search"
+        />
+      </div>
+
+      <div class="filter_panel" :class="{ open: filterOpen }">
         <div class="filter_panel_header">
           <p>Filter</p>
-          <button class="filter_close glass" @click="filterOpen = false">
+          <button class="filter_close" @click="filterOpen = false">
             <FontAwesomeIcon :icon="faXmark" />
           </button>
         </div>
 
-        <select v-model="selectedKategori" class="filter_select glass">
-          <option value="all">Alle kategorier</option>
-          <option v-for="kat in availableKategorier" :key="kat" :value="kat">
-            {{ kat }}
-          </option>
-        </select>
+        <div class="select_wrapper">
+          <select v-model="selectedKategori" class="filter_select">
+            <option value="all">Alle kategorier</option>
+            <option v-for="kat in availableKategorier" :key="kat" :value="kat">
+              {{ kat }}
+            </option>
+          </select>
+          <FontAwesomeIcon :icon="faChevronDown" class="select_chevron" />
+        </div>
 
         <input
           ref="dateInput"
-          class="filter_select glass"
+          class="filter_field filter_select date_select"
           placeholder="Alle datoer"
           readonly
         />
 
         <div class="price_slider">
-          <p class="price_label">
-            {{ priceRange[0] }},- – {{ priceRange[1] }},-
-          </p>
+          <div class="price_label_wrapper">
+            <p class="price_label">{{ priceRange[0] }},-</p>
+            <p class="price_label">{{ priceRange[1] }},-</p>
+          </div>
           <div class="range_track">
+            <div class="range_base"></div>
+            <div class="range_fill" :style="rangeFillStyle"></div>
             <input
               type="range"
               :min="minPrice"
@@ -408,17 +418,13 @@ function handleClick(item) {
         </div>
 
         <input
-        v-model="searchQuery"
-        type="text"
-        placeholder="Søg"
-        class="filter_select glass"
-        >
+          v-model="searchQuery"
+          type="text"
+          placeholder="Søg"
+          class="filter_field search_input desktop_search"
+        />
 
-        <button
-          v-if="hasActiveFilters"
-          class="glass reset_button"
-          @click="resetFilters"
-        >
+        <button class="reset_button" @click="resetFilters">
           Nulstil filtre
         </button>
       </div>
@@ -432,9 +438,7 @@ function handleClick(item) {
         >
           <div class="event_image">
             <img :src="item.billede" alt="" />
-            <span v-if="item.kategori" class="event_tag">{{
-              item.kategori
-            }}</span>
+            <span v-if="item.kategori" class="event_tag">{{ item.kategori }}</span>
             <div class="event_button_wrapper">
               <button class="event_button glass" @click.stop="toggle(item.id)">
                 <FontAwesomeIcon
@@ -446,10 +450,10 @@ function handleClick(item) {
           </div>
 
           <div class="event_info">
-            <div 
-            class="event_cardName"
-  :ref="el => setTitleRef(el, item.id)"
-  :class="{ overflowing: overflowingTitles[item.id] }"
+            <div
+              class="event_cardName"
+              :ref="el => setTitleRef(el, item.id)"
+              :class="{ overflowing: overflowingTitles[item.id] }"
             >
               <span :style="{ '--scroll-distance': `${scrollDistances[item.id] || 0}px` }">
                 {{ item.titel }}
@@ -467,18 +471,11 @@ function handleClick(item) {
           </div>
 
           <div
-            :ref="
-              (el) => {
-                if (el) contentRefs[item.id] = el;
-              }
-            "
+            :ref="(el) => { if (el) contentRefs[item.id] = el; }"
             class="event_content"
             :style="
               openId === item.id
-                ? {
-                    maxHeight: contentRefs[item.id]?.scrollHeight + 'px',
-                    paddingBottom: '20px',
-                  }
+                ? { maxHeight: contentRefs[item.id]?.scrollHeight + 'px', paddingBottom: '20px' }
                 : { maxHeight: '0px', paddingBottom: '0px' }
             "
           >
@@ -502,12 +499,7 @@ function handleClick(item) {
             </div>
             <p class="event_info_box">{{ item.beskrivelse }}</p>
             <div v-if="item.billetLink" class="button_wrapper">
-              <a
-                :href="item.billetLink"
-                target="_blank"
-                class="glass ticket_button"
-                >Køb billet</a
-              >
+              <a :href="item.billetLink" target="_blank" class="glass ticket_button">Køb billet</a>
             </div>
           </div>
         </div>
@@ -569,11 +561,7 @@ function handleClick(item) {
                   <div class="infoText">
                     <p>Pris:</p>
                     <p class="event_cardPrice">
-                      {{
-                        selectedEvent.pris
-                          ? selectedEvent.pris + ",-"
-                          : "Gratis"
-                      }}
+                      {{ selectedEvent.pris ? selectedEvent.pris + ",-" : "Gratis" }}
                     </p>
                     <p>{{ selectedEvent.note }}</p>
                   </div>
@@ -582,8 +570,7 @@ function handleClick(item) {
                       :href="selectedEvent.billetLink"
                       target="_blank"
                       class="glass ticket_button"
-                      >Køb billet</a
-                    >
+                    >Køb billet</a>
                   </div>
                 </div>
               </div>
@@ -591,10 +578,7 @@ function handleClick(item) {
 
             <div class="modal_sidebar">
               <h3>Andre begivenheder</h3>
-              <p
-                v-if="otherEvents.length === 0"
-                style="color: white; font-size: 14px"
-              >
+              <p v-if="otherEvents.length === 0" style="color: white; font-size: 14px">
                 Ingen andre kommende begivenheder
               </p>
               <div
@@ -607,10 +591,7 @@ function handleClick(item) {
                 <div class="sidebar_overlay">
                   <span class="glass">
                     {{ item.titel }}
-                    <FontAwesomeIcon
-                      :icon="faAngleRight"
-                      class="sidebar_icon"
-                    />
+                    <FontAwesomeIcon :icon="faAngleRight" class="sidebar_icon" />
                   </span>
                 </div>
               </div>
@@ -634,10 +615,7 @@ function handleClick(item) {
             <button class="slider_arrow left glass" @click="prevSlide">
               <FontAwesomeIcon :icon="faAngleLeft" />
             </button>
-            <img
-              :src="sliderEvent.billeder[sliderIndex]"
-              class="slider_image"
-            />
+            <img :src="sliderEvent.billeder[sliderIndex]" class="slider_image" />
             <button class="slider_arrow right glass" @click="nextSlide">
               <FontAwesomeIcon :icon="faAngleRight" />
             </button>
@@ -657,6 +635,11 @@ function handleClick(item) {
 </template>
 
 <style scoped>
+
+.desktop_search {
+  display: none;
+}
+
 .event {
   background: white;
   border-radius: 16px;
@@ -746,29 +729,8 @@ function handleClick(item) {
   padding: 15px;
   background: #eeeeff;
   position: relative;
-  
-  .event_dateAndPrice {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
-    margin-top: 15px;
-    
-    .event_cardDate {
-      font-family: "Barlow Condensed", sans-serif;
-      color: #535353;
-      font-size: 16px;
-    }
-    
-    .event_cardPrice {
-      font-family: "Barlow Condensed", sans-serif;
-      font-size: 20px;
-      color: #535353;
-      font-weight: 600;
-    }
-  }
-}
 
-.band_noteTag{
+  .band_noteTag {
     position: absolute;
     right: 15px;
     bottom: 30px;
@@ -779,6 +741,27 @@ function handleClick(item) {
     font-size: 16px;
     line-height: normal;
   }
+
+  .event_dateAndPrice {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-top: 15px;
+
+    .event_cardDate {
+      font-family: "Barlow Condensed", sans-serif;
+      color: #535353;
+      font-size: 16px;
+    }
+
+    .event_cardPrice {
+      font-family: "Barlow Condensed", sans-serif;
+      font-size: 20px;
+      color: #535353;
+      font-weight: 600;
+    }
+  }
+}
 
 .event_cardName {
   color: #0b1071;
@@ -799,13 +782,8 @@ function handleClick(item) {
 }
 
 @keyframes marquee {
-  from {
-    transform: translateX(0);
-  }
-
-  to {
-    transform: translateX(calc(var(--scroll-distance) * -1));
-  }
+  from { transform: translateX(0); }
+  to   { transform: translateX(calc(var(--scroll-distance) * -1)); }
 }
 
 .event_content {
@@ -828,7 +806,7 @@ function handleClick(item) {
   }
 }
 
-.note{
+.note {
   grid-column: 1 / -1;
 }
 
@@ -889,36 +867,68 @@ function handleClick(item) {
   padding: 20px 0;
 }
 
+/* ---------- FILTER ---------- */
+
+.filter_button_search_wrapper {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  align-items: center;
+  column-gap: 30px;
+}
+
 .filter_toggle {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 10px;
   height: 50px;
   padding: 0 24px;
   font-size: 20px;
   color: white;
-  font-family: "Barlow Condensed", sans-serif;
+  font-family: "Inter", sans-serif;
   cursor: pointer;
   border: none;
+  border-radius: 100px;
+  background: var(--primary);
   margin: 20px 0;
 
   svg {
-    width: 20px;
-    height: 20px;
+    width: 25px;
+    height: 25px;
   }
+}
+
+.filter_icon {
+  width: 16px;
+  height: 16px;
+}
+
+.select_wrapper {
+  position: relative;
+  display: inline-flex;
+}
+
+.select_chevron {
+  position: absolute;
+  top: 50%;
+  right: 18px;
+  transform: translateY(-50%);
+  color: white;
+  pointer-events: none;
 }
 
 .filter_panel {
   display: none;
   flex-direction: column;
-  gap: 16px;
-  padding: 24px;
   margin-bottom: 24px;
   border-radius: 16px;
 }
 
 .filter_panel.open {
   display: flex;
+  background-color: #eeeeff;
+  padding: 30px;
+  gap: 25px;
 }
 
 .filter_panel_header {
@@ -928,8 +938,8 @@ function handleClick(item) {
 
   p {
     font-size: 24px;
-    font-family: "Barlow Condensed", sans-serif;
-    color: white;
+    font-family: "Inter", sans-serif;
+    color: black;
   }
 }
 
@@ -940,6 +950,8 @@ function handleClick(item) {
   font-size: 18px;
   cursor: pointer;
   border: none;
+  border-radius: 50%;
+  background: var(--primary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -950,39 +962,97 @@ function handleClick(item) {
   }
 }
 
+.filter_field {
+  height: 56px;
+  width: 100%;
+  font-size: 18px;
+  padding: 0 20px;
+  border: none;
+  outline: none;
+  border-radius: 100px;
+  font-family: "Inter", sans-serif;
+}
+
 .filter_select {
   width: 100%;
   height: 56px;
-  font-size: 20px;
+  font-size: 18px;
   color: white;
   padding: 0 20px;
   cursor: pointer;
   border: none;
   outline: none;
-  font-family: "Barlow Condensed", sans-serif;
-  background: rgba(87, 116, 184, 0.6);
+  border-radius: 100px;
+  font-family: "Inter", sans-serif;
+  background: var(--primary);
+}
+
+.search_input {
+  background: white;
+  color: #111;
+}
+
+/* Hvid placeholder-tekst på alle filterfelter */
+.filter_select::placeholder {
+  color: #fff;
+  opacity: 1;
+}
+
+/* Genre-select: skjul native chevron */
+select.filter_select {
+  -webkit-appearance: none;
+  appearance: none;
+  background-color: var(--primary);
+  padding-right: 56px;
 }
 
 .price_label {
-  color: white;
+  color: black;
   font-size: 18px;
-  font-family: "Barlow Condensed", sans-serif;
+  font-family: "Inter", sans-serif;
   margin-bottom: 8px;
 }
 
+.price_label_wrapper {
+  display: flex;
+  justify-content: space-between;
+}
+
 .reset_button {
-  height: 50px;
-  padding: 0 20px;
+  height: 56px;
+  padding: 0 24px;
   color: white;
   font-size: 18px;
-  font-family: "Barlow Condensed", sans-serif;
+  font-family: "Inter", sans-serif;
   cursor: pointer;
   border: none;
+  border-radius: 100px;
+  background: var(--primary);
 }
 
 .range_track {
   position: relative;
   height: 2rem;
+}
+
+.range_base,
+.range_fill {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 4px;
+  border-radius: 2px;
+  pointer-events: none;
+}
+
+.range_base {
+  left: 0;
+  right: 0;
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.range_fill {
+  background: var(--primary);
 }
 
 .range_track input[type="range"] {
@@ -1002,7 +1072,7 @@ function handleClick(item) {
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: white;
+  background: var(--primary);
   cursor: pointer;
   margin-top: -8px;
   border: 3px solid #5774b8;
@@ -1010,13 +1080,13 @@ function handleClick(item) {
 
 .range_track input[type="range"]::-webkit-slider-runnable-track {
   height: 4px;
-  background: rgba(255, 255, 255, 0.5);
+  background: transparent;
   border-radius: 2px;
 }
 
 .range_track input[type="range"]::-moz-range-track {
   height: 4px;
-  background: rgba(255, 255, 255, 0.5);
+  background: transparent;
   border-radius: 2px;
 }
 
@@ -1032,19 +1102,35 @@ function handleClick(item) {
 }
 
 @media (min-width: 993px) {
+  .mobile_search {
+    display: none;
+  }
+
+  .desktop_search {
+    display: block;
+  }
+
   .filter_toggle {
     display: none;
+  }
+
+  .event {
+    overflow: hidden;
   }
 
   .filter_panel {
     display: flex !important;
     flex-direction: row;
     align-items: center;
-    flex-wrap: wrap;
-    border-radius: 100px;
-    padding: 12px 24px;
-    gap: 20px;
+    flex-wrap: nowrap;
+    width: 100%;
+    gap: 16px;
     margin-bottom: 30px;
+  }
+
+  .open {
+    padding: 0;
+    background-color: transparent;
   }
 
   .filter_panel_header {
@@ -1052,9 +1138,12 @@ function handleClick(item) {
   }
 
   .filter_select {
-    width: auto;
-    min-width: 180px;
     height: 50px;
+  }
+
+  .date_select,
+  .search_input {
+    flex: 1;
   }
 
   .price_slider {

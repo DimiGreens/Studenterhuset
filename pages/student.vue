@@ -147,7 +147,7 @@ const { data: glassBox } = await useFetch("/api/contentful", {
     </p>
     <div class="cafe_image mt-2">
       <img src="../assets/images/Studenterhuset_frivillig.jpg" alt="" />
-      <NuxtLink class="cta glass card__cta" to="/frivillig">
+      <NuxtLink class="cta glass card__cta" to="/volunteer">
         Bliv Frivillig <FontAwesomeIcon :icon="faAngleRight" />
       </NuxtLink>
     </div>

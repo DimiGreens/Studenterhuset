@@ -1,9 +1,10 @@
 <template>
   <div>
     <AppNav />
-    <div class="page">
+
+    <main class="page">
       <NuxtPage />
-    </div>
+    </main>
     <AppFooter />
   </div>
 </template>

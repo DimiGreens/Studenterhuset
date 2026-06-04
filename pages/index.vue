@@ -14,7 +14,7 @@ const { data: heroBillede } = await useFetch("/api/contentful", {
   },
 });
 
-const screenWidth = ref(1920);
+const screenWidth = ref<number | null>(null);
 
 onMounted(() => {
   screenWidth.value = window.innerWidth;
@@ -28,10 +28,13 @@ const heroImgUrl = computed(() => {
   );
   if (!asset) return null;
 
+  const w = screenWidth.value;
   let width;
-  if (screenWidth.value < 992) {
+  if (w === null) {
+    width = 1920;
+  } else if (w < 992) {
     width = 600;
-  } else if (screenWidth.value < 1510) {
+  } else if (w < 1510) {
     width = 992;
   } else {
     width = 1920;
@@ -321,7 +324,7 @@ function goToConcert(id) {
       </p>
       <div class="volunteer-image-wrap">
         <img src="../assets/images/Studenterhuset_frivillig.jpg" alt="" />
-        <NuxtLink class="glass cta card__cta" to="/frivillig">
+        <NuxtLink class="glass cta card__cta" to="/volunteer">
           Bliv Frivillig <FontAwesomeIcon :icon="faAngleRight" />
         </NuxtLink>
       </div>

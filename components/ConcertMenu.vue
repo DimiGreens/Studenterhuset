@@ -299,7 +299,7 @@ console.log(selectedConcert.value);
         v-model="searchQuery"
         type="text"
         placeholder="Søg"
-        class="filter_field search_input"
+        class="filter_field search_input mobile_search"
       />
 </div>
     <div class="filter_panel" :class="{ open: filterOpen }">
@@ -349,6 +349,13 @@ console.log(selectedConcert.value);
           />
         </div>
       </div>
+
+      <input
+        v-model="searchQuery"
+        type="text"
+        placeholder="Søg"
+        class="filter_field search_input desktop_search"
+      />
 
       <button
         class="reset_button"
@@ -925,6 +932,7 @@ to   { transform: translateX(calc(var(--scroll-distance) * -1)); }
 
 .filter_field {
   height: 56px;
+  width: 100%;
   font-size: 18px;
   padding: 0 20px;
   border: none;
@@ -1063,6 +1071,14 @@ select.filter_select {
 }
 
 @media (min-width: 993px) {
+  .mobile_search {
+    display: none;
+  }
+
+  .desktop_search {
+    display: block;
+  }
+
   .filter_toggle {
     display: none;
   }

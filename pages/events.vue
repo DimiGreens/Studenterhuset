@@ -45,10 +45,12 @@ const begivenheder = (data.value?.items ?? []).map((item) => {
     tid: formatTime(f.dato),
     venue: f.venue ?? "",
     pris: f.pris ?? null,
+    note: f.note ?? "",
     billetLink: f.billetLink ?? null,
     fastBegivenhed: f.fastBegivenhed ?? false,
   };
 });
+console.log(begivenheder)
 
 const { data: heroBillede } = await useFetch("/api/contentful", {
   query: { contentType: "heroBillede", include: 1, "fields.billedtitel": "Begivenheder Hero" },

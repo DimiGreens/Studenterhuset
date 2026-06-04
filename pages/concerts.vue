@@ -60,7 +60,9 @@ const koncerter = (data.value?.items ?? []).map((item) => {
     doorsOpen: formatTime(f.doereneAabner),
     venue: f.sal ?? "",
     price: f.pris ?? 0,
+    note: f.note ?? "",
     ticketLink: f.billetLink ?? "",
+    concertName: f.titel ?? "",
   };
 });
 console.log(koncerter)

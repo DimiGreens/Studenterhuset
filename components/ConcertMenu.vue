@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from "vue";
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from "vue";
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 
 import {
@@ -22,6 +22,15 @@ const props = defineProps({
 });
 
 const concerts = computed(() => props.concert);
+
+watch(
+  () => props.concert,
+  async () => {
+    await nextTick();
+    calculateOverflow();
+  },
+  { deep: true }
+);
 
 const filterOpen = ref(false);
 const dateInput = ref(null);
@@ -117,7 +126,35 @@ const filteredConcert = computed(() => {
   return result;
 });
 
-onMounted(() => {
+const titleRefs = ref({});
+const overflowingTitles = ref({});
+const scrollDistances = ref({});
+
+const setTitleRef = (el, id) => {
+  if (!el) return;
+  titleRefs.value[id] = el;
+  const span = el.querySelector("span");
+  if (!span) return;
+  const distance = span.scrollWidth - el.clientWidth;
+  overflowingTitles.value[id] = distance > 0;
+  scrollDistances.value[id] = distance;
+};
+
+const calculateOverflow = () => {
+  Object.entries(titleRefs.value).forEach(([id, el]) => {
+    const span = el.querySelector("span");
+    if (!span) return;
+    const distance = span.scrollWidth - el.clientWidth;
+    overflowingTitles.value[id] = distance > 0;
+    scrollDistances.value[id] = distance;
+  });
+};
+
+onMounted(async () => {
+  await nextTick();
+  calculateOverflow();
+  window.addEventListener("resize", calculateOverflow);
+
   if (dateInput.value) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -184,6 +221,7 @@ function getEmbedType(url) {
 }
 
 onUnmounted(() => {
+  window.removeEventListener("resize", calculateOverflow);
   document.body.style.overflow = "";
 });
 
@@ -246,6 +284,8 @@ function handleClick(item) {
     openModal(item);
   }
 }
+
+console.log(selectedConcert.value);
 </script>
 
 <template>
@@ -255,7 +295,7 @@ function handleClick(item) {
       <FontAwesomeIcon :icon="filterOpen ? faXmark : faBars" />
     </button>
 
-    <div class="filter_panel glass" :class="{ open: filterOpen }">
+    <div class="filter_panel" :class="{ open: filterOpen }">
       <div class="filter_panel_header">
         <p>Filter</p>
         <button class="filter_close glass" @click="filterOpen = false">
@@ -334,10 +374,23 @@ function handleClick(item) {
         </div>
 
         <div class="concert_info">
-          <p class="band_cardName">{{ item.bandName }}</p>
+          <div
+  class="band_cardName"
+  :ref="el => setTitleRef(el, item.id)"
+  :class="{ overflowing: overflowingTitles[item.id] }"
+>
+  <span :style="{ '--scroll-distance': `${scrollDistances[item.id] || 0}px` }">
+    {{ item.bandName }}
+  </span>
+</div>
           <div class="band_dateAndPrice" v-show="openId !== item.id">
             <p class="band_cardDate">{{ item.date }}</p>
-            <p class="band_cardPrice">{{ item.price }},-</p>
+            <p class="band_cardPrice">
+              {{ item.price == 0 || item.price == null ? "Gratis" : item.price + ",-" }}
+            </p>
+            <div class="band_noteTag">
+              {{ item.note }}
+            </div>
           </div>
         </div>
 
@@ -381,6 +434,9 @@ function handleClick(item) {
             <div class="infoText">
               <p>Pris:</p>
               <p>{{ item.price }},-</p>
+            </div>
+            <div class="infoText note">
+              <p>{{ item.note }}</p>
             </div>
           </div>
           <p class="band_info_box">{{ item.bandDescription }}</p>
@@ -432,9 +488,8 @@ function handleClick(item) {
               <div class="opened_modal_bandbox">
                 <div class="band_detail">
                   <h2>{{ selectedConcert.bandName }}</h2>
-                  <p class="band_info_box">
-                    {{ selectedConcert.bandDescription }}
-                  </p>
+                  <h3>{{ selectedConcert.concertName }}</h3>
+                  <p class="band_info_box" v-html="selectedConcert.bandDescription"></p>
                   <iframe
                    v-if="selectedConcert.spotifyEmbed"
   :src="toEmbedUrl(selectedConcert.spotifyEmbed)"
@@ -472,6 +527,7 @@ function handleClick(item) {
                   <div class="infoText">
                     <p>Pris:</p>
                     <p>{{ selectedConcert.price }},-</p>
+                    <p>{{ selectedConcert.note }}</p>
                   </div>
                   <div class="button_wrapper">
                     <button class="glass ticket_button">Køb billet</button>
@@ -630,26 +686,33 @@ function handleClick(item) {
   justify-content: space-between;
   padding: 15px;
   background: #eeeeff;
+  position: relative;
 
-  .band_cardName {
-    color: #0b1071;
+  .band_noteTag{
+    position: absolute;
+    right: 15px;
+    bottom: 30px;
+    margin-bottom: 15px;
+    max-width: 25ch;
+    text-align: right;
     font-family: "Barlow Condensed", sans-serif;
-    font-size: 32px;
-    font-weight: bold;
+    font-size: 16px;
+    line-height: normal;
   }
 
+  
   .band_dateAndPrice {
     display: flex;
     justify-content: space-between;
     align-items: flex-end;
     margin-top: 15px;
-
+    
     .band_cardDate {
       font-family: "Barlow Condensed", sans-serif;
       color: #535353;
       font-size: 16px;
     }
-
+    
     .band_cardPrice {
       font-family: "Barlow Condensed", sans-serif;
       font-size: 20px;
@@ -657,6 +720,29 @@ function handleClick(item) {
       font-weight: 600;
     }
   }
+}
+
+.band_cardName {
+color: #0b1071;
+font-family: "Barlow Condensed", sans-serif;
+font-size: 32px;
+font-weight: bold;
+overflow: hidden;
+white-space: nowrap;
+}
+
+.band_cardName span {
+display: inline-block;
+white-space: nowrap;
+}
+
+.concert:hover .band_cardName.overflowing span {
+animation: marquee 1s linear forwards;
+}
+
+@keyframes marquee {
+from { transform: translateX(0); }
+to   { transform: translateX(calc(var(--scroll-distance) * -1)); }
 }
 
 .concert_content {
@@ -697,6 +783,7 @@ function handleClick(item) {
   width: 100%;
   margin-bottom: 10px;
 
+
   p:first-child {
     font-size: 13px;
     font-weight: 700;
@@ -714,12 +801,17 @@ function handleClick(item) {
   }
 }
 
+.note{
+  grid-column: 1 / -1;
+}
+
 .band_info_box {
   font-family: "Inter", sans-serif;
   font-size: 15px;
   line-height: 1.6;
   color: #333;
   padding: 15px 0;
+  white-space: pre-line;
 }
 
 .ticket_button {
@@ -762,8 +854,6 @@ function handleClick(item) {
 .filter_panel {
   display: none;
   flex-direction: column;
-  gap: 16px;
-  padding: 24px;
   margin-bottom: 24px;
   border-radius: 16px;
 }
@@ -853,7 +943,7 @@ function handleClick(item) {
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: white;
+  background: var(--primary);
   cursor: pointer;
   margin-top: -8px;
   border: 3px solid #5774b8;
@@ -902,6 +992,7 @@ function handleClick(item) {
   }
 
   .price_slider {
+
     min-width: 220px;
   }
 

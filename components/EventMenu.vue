@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from "vue";
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from "vue";
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 import {
   faAngleDown,
@@ -34,6 +34,9 @@ const selectedEvent = ref(null);
 const sliderEvent = ref(null);
 const sliderIndex = ref(0);
 const searchQuery = ref("");
+const titleRefs = ref({});
+const overflowingTitles = ref({});
+const scrollDistances = ref({});
 
 const priceRange = ref([0, 500]);
 const minPrice = ref(0);
@@ -91,6 +94,43 @@ const fasteBegivenheder = computed(() => {
     const [day, month, year] = item.dato.split("/");
     return new Date(year, month - 1, day) >= today;
   });
+});
+
+const setTitleRef = (el, id) => {
+  if (!el) return;
+
+  titleRefs.value[id] = el;
+
+  const span = el.querySelector("span");
+  if (!span) return;
+
+  const distance = span.scrollWidth - el.clientWidth;
+
+  overflowingTitles.value[id] = distance > 0;
+  scrollDistances.value[id] = distance;
+};
+
+const calculateOverflow = () => {
+  Object.entries(titleRefs.value).forEach(([id, el]) => {
+    const span = el.querySelector("span");
+    if (!span) return;
+
+    const distance = span.scrollWidth - el.clientWidth;
+
+    overflowingTitles.value[id] = distance > 0;
+    scrollDistances.value[id] = distance;
+  });
+};
+
+onMounted(async () => {
+  await nextTick();
+  calculateOverflow();
+
+  window.addEventListener("resize", calculateOverflow);
+});
+
+onUnmounted(() => {
+  window.removeEventListener("resize", calculateOverflow);
 });
 
 const enkeltBegivenheder = computed(() => {
@@ -178,6 +218,15 @@ onUnmounted(() => {
   document.body.style.overflow = "";
 });
 
+watch(
+  () => props.events,
+  async () => {
+    await nextTick();
+    calculateOverflow();
+  },
+  { deep: true }
+);
+
 const openModal = (item) => {
   selectedEvent.value = item;
   document.body.style.overflow = "hidden";
@@ -237,7 +286,15 @@ function handleClick(item) {
           </div>
 
           <div class="event_info">
-            <p class="event_cardName">{{ item.titel }}</p>
+            <div 
+            class="event_cardName"
+  :ref="el => setTitleRef(el, item.id)"
+  :class="{ overflowing: overflowingTitles[item.id] }"
+            >
+              <span :style="{ '--scroll-distance': `${scrollDistances[item.id] || 0}px` }">
+                {{ item.titel }}
+              </span>
+            </div>
             <div class="event_dateAndPrice" v-show="openId !== item.id">
               <p class="event_cardDate">{{ item.dato }}</p>
               <p class="event_cardPrice">
@@ -279,6 +336,9 @@ function handleClick(item) {
                 <p>Pris:</p>
                 <p>{{ item.pris ? item.pris + ",-" : "Gratis" }}</p>
               </div>
+              <div class="infoText note">
+              <p>{{ item.note }}</p>
+            </div>
             </div>
             <p class="event_info_box">{{ item.beskrivelse }}</p>
             <div v-if="item.billetLink" class="button_wrapper">
@@ -385,12 +445,23 @@ function handleClick(item) {
           </div>
 
           <div class="event_info">
-            <p class="event_cardName">{{ item.titel }}</p>
+            <div 
+            class="event_cardName"
+  :ref="el => setTitleRef(el, item.id)"
+  :class="{ overflowing: overflowingTitles[item.id] }"
+            >
+              <span :style="{ '--scroll-distance': `${scrollDistances[item.id] || 0}px` }">
+                {{ item.titel }}
+              </span>
+            </div>
             <div class="event_dateAndPrice" v-show="openId !== item.id">
               <p class="event_cardDate">{{ item.dato }}</p>
               <p class="event_cardPrice">
                 {{ item.pris ? item.pris + ",-" : "Gratis" }}
               </p>
+              <div class="band_noteTag">
+                {{ item.note }}
+              </div>
             </div>
           </div>
 
@@ -479,7 +550,7 @@ function handleClick(item) {
                       title="Fast begivenhed"
                     />
                   </h2>
-                  <p class="event_info_box">{{ selectedEvent.beskrivelse }}</p>
+                  <p class="event_info_box" v-html="selectedEvent.beskrivelse"></p>
                 </div>
                 <div class="event_info modal_info">
                   <div class="infoText">
@@ -496,13 +567,14 @@ function handleClick(item) {
                   </div>
                   <div class="infoText">
                     <p>Pris:</p>
-                    <p>
+                    <p class="event_cardPrice">
                       {{
                         selectedEvent.pris
                           ? selectedEvent.pris + ",-"
                           : "Gratis"
                       }}
                     </p>
+                    <p>{{ selectedEvent.note }}</p>
                   </div>
                   <div v-if="selectedEvent.billetLink" class="button_wrapper">
                     <a
@@ -672,32 +744,66 @@ function handleClick(item) {
   justify-content: space-between;
   padding: 15px;
   background: #eeeeff;
-
-  .event_cardName {
-    color: #0b1071;
-    font-family: "Barlow Condensed", sans-serif;
-    font-size: 32px;
-    font-weight: bold;
-  }
-
+  position: relative;
+  
   .event_dateAndPrice {
     display: flex;
     justify-content: space-between;
     align-items: flex-end;
     margin-top: 15px;
-
+    
     .event_cardDate {
       font-family: "Barlow Condensed", sans-serif;
       color: #535353;
       font-size: 16px;
     }
-
+    
     .event_cardPrice {
       font-family: "Barlow Condensed", sans-serif;
       font-size: 20px;
       color: #535353;
       font-weight: 600;
     }
+  }
+}
+
+.band_noteTag{
+    position: absolute;
+    right: 15px;
+    bottom: 30px;
+    margin-bottom: 15px;
+    max-width: 25ch;
+    text-align: right;
+    font-family: "Barlow Condensed", sans-serif;
+    font-size: 16px;
+    line-height: normal;
+  }
+
+.event_cardName {
+  color: #0b1071;
+  font-family: "Barlow Condensed", sans-serif;
+  font-size: 32px;
+  font-weight: bold;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.event_cardName span {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.event:hover .event_cardName.overflowing span {
+  animation: marquee 1s linear forwards;
+}
+
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(calc(var(--scroll-distance) * -1));
   }
 }
 
@@ -719,6 +825,10 @@ function handleClick(item) {
   p {
     color: #111;
   }
+}
+
+.note{
+  grid-column: 1 / -1;
 }
 
 .infoText {

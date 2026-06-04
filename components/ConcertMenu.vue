@@ -179,18 +179,16 @@ onMounted(async () => {
         selectedDate.value = dateStr;
       },
       onDayCreate: (dObj, dStr, fp, dayElem) => {
-        const d = dayElem.dateObj;
-        const day = String(d.getDate()).padStart(2, "0");
-        const month = String(d.getMonth() + 1).padStart(2, "0");
-        const year = d.getFullYear();
-        const formatted = `${day}/${month}/${year}`;
+  const d = dayElem.dateObj;
+  const day = String(d.getDate()).padStart(2, "0");
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const year = d.getFullYear();
+  const formatted = `${day}/${month}/${year}`;
 
-        if (concertDates.has(formatted)) {
-          const dot = document.createElement("span");
-          dot.classList.add("event-dot");
-          dayElem.appendChild(dot);
-        }
-      },
+  if (concertDates.has(formatted)) {
+    dayElem.classList.add("has-event");
+  }
+},
     });
 
     const route = useRoute();
@@ -617,6 +615,11 @@ console.log(selectedConcert.value);
 </template>
 
 <style scoped>
+
+.desktop_search {
+  display: none;
+}
+
 .concert {
   background: white;
   border-radius: 16px;

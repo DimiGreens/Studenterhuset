@@ -175,28 +175,24 @@ p {
 /* =========================
    CALENDER STYLING
 ========================= */
-
-.flatpickr-day {
-    position: relative;
+.flatpickr-calendar,
+.flatpickr-calendar .flatpickr-month,
+.flatpickr-calendar .flatpickr-weekday,
+.flatpickr-calendar .flatpickr-day,
+.flatpickr-calendar .cur-year,
+.flatpickr-calendar .flatpickr-monthDropdown-months {
+    font-family: "inter", sans-serif !important;
 }
 
-.event-dot {
-    position: absolute;
-    bottom: 3px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 5px;
-    height: 5px;
+.flatpickr-day.has-event {
+    box-shadow: inset 0 0 0 3px var(--primary);
     border-radius: 50%;
-    background-color: #5774b8;
-    display: block;
-    pointer-events: none;
 }
 
-/* Sørg for at prikken er hvid når dagen er valgt eller i dag */
-.flatpickr-day.selected .event-dot,
-.flatpickr-day.today .event-dot {
-    background-color: white;
+.flatpickr-day.has-event.selected {
+    background: var(--primary) !important;
+    color: #fff !important;
+    box-shadow: none;
 }
 
 /* =========================
@@ -397,6 +393,7 @@ img {
     width: 100%;
     height: 250px;
 }
+
 
 /* responsive height */
 @media (min-width: 992px) {

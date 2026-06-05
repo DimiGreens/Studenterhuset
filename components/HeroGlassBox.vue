@@ -1,12 +1,17 @@
 <script setup>
+// Konverterer Contentful's Rich Text-format til almindeligt HTML som browseren kan vise
 import { documentToHtmlString } from '@contentful/rich-text-html-renderer'
+// BLOCKS indeholder konstanter for de forskellige bloktyper i Rich Text (overskrift, paragraf osv.)
 import { BLOCKS } from '@contentful/rich-text-types'
 
+// Modtager heading og heroTagline fra forælderen (siderne der bruger komponenten).
+// Begge er Rich Text-objekter direkte fra Contentful.
 const props = defineProps({
   heading: Object,
   heroTagline: Object,
 })
 
+// Definerer hvordan de forskellige bloktyper skal omsættes til HTML-tags
 const options = {
   renderNode: {
     [BLOCKS.HEADING_1]: (node, next) => `<h1>${next(node.content)}</h1>`,
@@ -15,7 +20,10 @@ const options = {
   }
 }
 
+// Omformer heading til HTML-streng, opdateres automatisk hvis prop-værdien ændrer sig
 const headingHtml = computed(() => props.heading ? documentToHtmlString(props.heading, options) : '')
+
+// Omformer tagline til HTML-streng på samme måde
 const taglineHtml = computed(() => props.heroTagline ? documentToHtmlString(props.heroTagline, options) : '')
 </script>
 

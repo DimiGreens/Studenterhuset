@@ -6,6 +6,7 @@ import "swiper/css/pagination";
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 import { faAngleRight } from "@fortawesome/free-solid-svg-icons";
 
+// Henter hero-billedet til studerende-siden
 const { data: heroBillede } = await useFetch("/api/contentful", {
   query: {
     contentType: "heroBillede",
@@ -14,12 +15,14 @@ const { data: heroBillede } = await useFetch("/api/contentful", {
   },
 });
 
-const screenWidth = ref(1920);
+// Starter som null, sættes til den faktiske skærmbredde i browseren (undgår hydration-mismatch)
+const screenWidth = ref(null);
 
 onMounted(() => {
   screenWidth.value = window.innerWidth;
 });
 
+// Beregner den korrekte billed-URL ud fra skærmbredden, sender et mindre billede til mobil
 const heroImgUrl = computed(() => {
   const item = heroBillede.value?.items?.[0];
   const assetId = item?.fields?.heroImg?.[0]?.sys?.id;
@@ -28,18 +31,20 @@ const heroImgUrl = computed(() => {
   );
   if (!asset) return null;
 
+  const w = screenWidth.value;
   let width;
-  if (screenWidth.value < 992) {
-    width = 600;
-  } else if (screenWidth.value < 1510) {
-    width = 992;
-  } else {
+  if (w === null || w >= 1510) {
     width = 1920;
+  } else if (w < 992) {
+    width = 600;
+  } else {
+    width = 992;
   }
 
   return `https:${asset.fields.file.url}?w=${width}&q=80&fm=webp`;
 });
 
+// Henter tekst-indholdet til glasbox-boksen oven på hero-billedet
 const { data: glassBox } = await useFetch("/api/contentful", {
   query: {
     contentType: "heroGlassBox",
@@ -48,29 +53,34 @@ const { data: glassBox } = await useFetch("/api/contentful", {
   },
 });
 
-// ── BEGIVENHEDER ───────────────────────────────────────
+// Henter de kommende begivenheder til slider-sektionen nederst på siden
 const { data: eventData } = await useFetch("/api/contentful", {
   query: { contentType: "begivenheder", include: 3 },
   fresh: true,
 });
 
+// Assets (billeder) til begivenheder ligger i includes, ikke direkte på felterne
 const allEventAssets = eventData.value?.includes?.Asset ?? [];
 
+// Slår et billed-link op i includes-listen og returnerer den fulde URL
 const resolveEventAsset = (assetLink) => {
   if (!assetLink?.sys?.id) return null;
   const asset = allEventAssets.find((a) => a.sys.id === assetLink.sys.id);
   return asset ? "https:" + asset.fields.file.url : null;
 };
 
+// Formaterer et ISO-tidsstempel til dansk datoformat (fx "15/03/2025")
 const formatEventDate = (iso) => {
   if (!iso) return "";
   const d = new Date(iso);
   return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
 };
 
+// Opretter en "i dag"-dato uden klokkeslæt til sammenligning
 const today = new Date();
 today.setHours(0, 0, 0, 0);
 
+// Mapper, filtrerer fortidige fra, sorterer og tager de 3 nærmeste begivenheder til slideren
 const kommendBegivenheder = (eventData.value?.items ?? [])
   .map((item) => {
     const f = item.fields;
@@ -78,7 +88,7 @@ const kommendBegivenheder = (eventData.value?.items ?? [])
       id: item.sys.id,
       titel: f.titel ?? "",
       billede: Array.isArray(f.billeder)
-        ? resolveEventAsset(f.billeder[0])
+        ? resolveEventAsset(f.billeder[0]) // bruger det første billede som preview
         : null,
       dato: formatEventDate(f.dato),
       pris: f.pris ?? null,
@@ -89,6 +99,7 @@ const kommendBegivenheder = (eventData.value?.items ?? [])
   .sort((a, b) => a._dateObj - b._dateObj)
   .slice(0, 3);
 
+// Navigerer til begivenhedssiden, åbner specifik begivenhed på desktop via URL-parameter
 function goToEvent(id) {
   if (window.innerWidth >= 993) {
     navigateTo(`/events?open=${id}`);
@@ -110,7 +121,7 @@ function goToEvent(id) {
   </div>
 
   <div class="container container--sm mt-5">
-    <h2 class="section_sub_headline">Læs op i</h2>
+    <p class="section_sub_headline">Læs op i</p>
     <h2 class="section_headline">Læsesalen</h2>
     <p>
       Læsesalen er åben døgnet rundt, men kun for studerende med gyldigt AAU-
@@ -122,7 +133,7 @@ function goToEvent(id) {
   </div>
 
   <div class="container container--sm mt-5">
-    <h2 class="section_sub_headline">Plads til gruppearbejdet</h2>
+    <p class="section_sub_headline">Plads til gruppearbejdet</p>
     <h2 class="section_headline">Booking af AAU-Grupperum</h2>
     <p>
       På Studenterhuset er det muligt at booke grupperumslokalerne: 311, 312,
@@ -130,7 +141,7 @@ function goToEvent(id) {
       Studenterhuset. Det er kun studerende på Aalborg Universitet, der kan
       benytte lokalerne.
     </p>
-    <p>Lokalerne bookes gennem følgende link: ></p>
+    <p>Lokalerne bookes gennem følgende <a href="https://book01.webbook.dk/auc/portal_booking2/index.php">link</a></p>
     <p>Benyt gæstelogin</p>
     <ul>
       <li>Bruger: guest</li>
@@ -144,7 +155,7 @@ function goToEvent(id) {
   </div>
 
   <div class="container container--sm mt-5">
-    <h2 class="section_sub_headline">Mangler du lokale til dit næste event?</h2>
+    <p class="section_sub_headline">Mangler du lokale til dit næste event?</p>
     <h2 class="section_headline">Leje af lokaler</h2>
     <p>
       Studenterhuset Aalborg består foruden caféen af en koncertsal og et mindre
@@ -190,11 +201,16 @@ function goToEvent(id) {
   <div class="container container--md mb-5">
     <p class="section_sub_headline">Oplev fællesskabet</p>
     <h2 class="section_headline">Begivenheder</h2>
-    <p>
-      På Studenterhuset har vi nogle fede begivenheder som vores faste
-      fredagsbar, brætspilsaften og queer night, kom ned med dine venner eller
-      kom alene og bliv en del af fællesskabet.
-    </p>
+    <div class="section_container">
+      <p>
+        På Studenterhuset har vi nogle fede begivenheder som vores faste
+        fredagsbar, brætspilsaften og queer night, kom ned med dine venner eller
+        kom alene og bliv en del af fællesskabet.
+      </p>
+      <NuxtLink class="cta button_primary_color" to="/events">
+        Se Begivenheder <FontAwesomeIcon :icon="faAngleRight" />
+      </NuxtLink>
+    </div>
 
     <!-- Desktop grid -->
     <div class="desktop_grid">
@@ -218,10 +234,6 @@ function goToEvent(id) {
         </div>
       </div>
     </div>
-
-    <NuxtLink class="cta button_primary_color" to="/events">
-      Se Begivenheder <FontAwesomeIcon :icon="faAngleRight" />
-    </NuxtLink>
 
     <!-- Mobile swiper -->
     <Swiper

@@ -1,33 +1,36 @@
 <script setup>
-// Henter begivenheder fra Contentful og mapper data til EventMenu
+// Henter alle begivenheder fra Contentful og mapper data til EventMenu-komponenten
 
 const { data } = await useFetch("/api/contentful", {
   query: { contentType: "begivenheder", include: 3 },
   fresh: true,
 });
 
-// Resolved assets ligger i includes, ikke direkte paa felterne
+// Contentful returnerer assets (billeder) separat under "includes", ikke direkte på felterne
 const allAssets = data.value?.includes?.Asset ?? [];
 
+// Slår et asset-link op i includes-listen og returnerer den fulde billed-URL
 const resolveAsset = (assetLink) => {
   if (!assetLink?.sys?.id) return null;
   const asset = allAssets.find((a) => a.sys.id === assetLink.sys.id);
   return asset ? "https:" + asset.fields.file.url : null;
 };
 
+// Formaterer et ISO-tidsstempel til dansk datoformat (fx "15/03/2025")
 const formatDate = (iso) => {
   if (!iso) return "";
   const d = new Date(iso);
   return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
 };
 
+// Formaterer et ISO-tidsstempel til klokkeslæt (fx "20:00")
 const formatTime = (iso) => {
   if (!iso) return "";
   const d = new Date(iso);
   return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 };
 
-// Flad datastruktur som EventMenu kan bruge direkte
+// Mapper alle begivenheder til en flad datastruktur som EventMenu-komponenten kan bruge direkte
 const begivenheder = (data.value?.items ?? []).map((item) => {
   const f = item.fields;
 
@@ -35,11 +38,11 @@ const begivenheder = (data.value?.items ?? []).map((item) => {
     id: item.sys.id,
     titel: f.titel ?? "",
     beskrivelse: f.beskrivelse ?? "",
-    // billeder er et array af asset-links — resolve dem alle
+    // billeder er et array af asset-links, resolver dem alle og filtrerer null-værdier fra
     billeder: Array.isArray(f.billeder)
       ? f.billeder.map(resolveAsset).filter(Boolean)
       : [],
-    // Brug foerste billede som hovedbillede
+    // bruger det første billede som preview-billede (vist på kortet)
     billede: Array.isArray(f.billeder) ? resolveAsset(f.billeder[0]) : null,
     dato: formatDate(f.dato),
     tid: formatTime(f.dato),
@@ -50,11 +53,12 @@ const begivenheder = (data.value?.items ?? []).map((item) => {
     pris: f.pris ?? null,
     note: f.note ?? "",
     billetLink: f.billetLink ?? null,
-    fastBegivenhed: f.fastBegivenhed ?? false,
+    fastBegivenhed: f.fastBegivenhed ?? false, // angiver om det er en tilbagevendende fast begivenhed (fx fredagsbar)
   };
 });
-console.log(begivenheder);
 
+
+// Henter hero-billedet til begivenhedssiden
 const { data: heroBillede } = await useFetch("/api/contentful", {
   query: {
     contentType: "heroBillede",
@@ -63,12 +67,14 @@ const { data: heroBillede } = await useFetch("/api/contentful", {
   },
 });
 
-const screenWidth = ref(1920);
+// Starter som null, sættes til den faktiske skærmbredde i browseren (undgår hydration-mismatch)
+const screenWidth = ref(null);
 
 onMounted(() => {
   screenWidth.value = window.innerWidth;
 });
 
+// Beregner den korrekte billed-URL ud fra skærmbredden, sender et mindre billede til mobil
 const heroImgUrl = computed(() => {
   const item = heroBillede.value?.items?.[0];
   const assetId = item?.fields?.heroImg?.[0]?.sys?.id;
@@ -77,13 +83,14 @@ const heroImgUrl = computed(() => {
   );
   if (!asset) return null;
 
+  const w = screenWidth.value;
   let width;
-  if (screenWidth.value < 992) {
-    width = 600;
-  } else if (screenWidth.value < 1510) {
-    width = 992;
-  } else {
+  if (w === null || w >= 1510) {
     width = 1920;
+  } else if (w < 992) {
+    width = 600;
+  } else {
+    width = 992;
   }
 
   return `https:${asset.fields.file.url}?w=${width}&q=80&fm=webp`;
@@ -110,7 +117,7 @@ const { data: glassBox } = await useFetch("/api/contentful", {
   </div>
 
   <div class="container container--md mt-4 mb-3">
-    <h2 class="section_sub_headline">Velkendte øjeblikke</h2>
+    <p class="section_sub_headline">Velkendte øjeblikke</p>
     <h2 class="section_headline">Faste begivenheder</h2>
   </div>
 

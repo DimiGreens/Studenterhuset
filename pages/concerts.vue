@@ -5,21 +5,25 @@ import { faAngleRight } from "@fortawesome/free-solid-svg-icons";
 
 library.add(faAngleRight);
 
+// Henter alle koncerter fra Contentful.
+// include: 3 sikrer at relaterede entries (fx kunstner) og assets (fx billeder) pakkes med i svaret
 const { data } = await useFetch("/api/contentful", {
   query: { contentType: "koncerter", include: 3 },
   fresh: true,
 });
 
-// Resolved entries og assets ligger i includes (ikke direkte paa felterne)
+// Contentful returnerer relaterede entries og assets separat under "includes", ikke direkte på felterne
 const allEntries = data.value?.includes?.Entry ?? [];
 const allAssets = data.value?.includes?.Asset ?? [];
 
+// Slår et asset-link op i includes-listen og returnerer den fulde billed-URL
 const resolveAsset = (assetLink) => {
   if (!assetLink?.sys?.id) return null;
   const asset = allAssets.find((a) => a.sys.id === assetLink.sys.id);
   return asset ? "https:" + asset.fields.file.url : null;
 };
 
+// Slår en kunstner-reference op i includes-listen og returnerer kunstnerens navn
 const resolveArtist = (artistLink) => {
   if (!artistLink?.sys?.id) return null;
   const artist = allEntries.find((e) => e.sys.id === artistLink.sys.id);
@@ -29,44 +33,45 @@ const resolveArtist = (artistLink) => {
   };
 };
 
+// Formaterer et ISO-tidsstempel til klokkeslæt (fx "20:00")
 const formatTime = (iso) => {
   if (!iso) return "";
   const d = new Date(iso);
   return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 };
 
+// Formaterer et ISO-tidsstempel til dansk datoformat (fx "15/03/2025")
 const formatDate = (iso) => {
   if (!iso) return "";
   const d = new Date(iso);
   return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
 };
 
-// Flad datastruktur som ConcertMenu kan bruge direkte
+// Mapper alle koncerter til en flad og overskuelig datastruktur som ConcertMenu-komponenten kan bruge direkte
 const koncerter = (data.value?.items ?? []).map((item) => {
   const f = item.fields;
   const hovedact = resolveArtist(f.hovedact);
 
   return {
     id: item.sys.id,
-    bandName: hovedact?.navn ?? f.titel, // artistens navn (fallback: koncert-titel)
-    bandDescription: f.beskrivelse ?? "", // koncert-beskrivelse
-    bandImage: resolveAsset(f.koncertBillede), // koncert-billede
-    bandImages: [],
-    spotifyEmbed: f.spotifyLinkKoncert,
+    bandName: hovedact?.navn ?? f.titel, // kunstnerens navn, falder tilbage på koncert-titlen hvis ingen kunstner er tilknyttet
+    bandDescription: f.beskrivelse ?? "",
+    bandImage: resolveAsset(f.koncertBillede),
+    bandImages: [], // ekstra galleri-billeder (ikke implementeret endnu)
+    spotifyEmbed: f.spotifyLinkKoncert, // Spotify- eller YouTube-link til embed-afspiller
     genre: Array.isArray(f.genre) ? f.genre[0] : f.genre,
     date: formatDate(f.datoOgKoncertStart),
-    concertStart: formatTime(f.datoOgKoncertStart),
-    doorsOpen: formatTime(f.doereneAabner),
-    venue: f.sal ?? "",
+    concertStart: formatTime(f.datoOgKoncertStart), // klokkeslæt for koncertstart
+    doorsOpen: formatTime(f.doereneAabner), // klokkeslæt for døråbning
+    venue: f.sal ?? "", // hvilken sal koncerten afholdes i
     price: f.pris ?? 0,
-    note: f.note ?? "",
+    note: f.note ?? "", // evt. særlig besked, fx "18+"
     ticketLink: f.billetLink ?? "",
     concertName: f.titel ?? "",
   };
 });
-console.log(koncerter);
 
-// henter hero
+// Henter hero-billedet til koncertsiden
 const { data: heroBillede } = await useFetch("/api/contentful", {
   query: {
     contentType: "heroBillede",
@@ -75,12 +80,14 @@ const { data: heroBillede } = await useFetch("/api/contentful", {
   },
 });
 
-const screenWidth = ref(1920);
+// Starter som null, sættes til den faktiske skærmbredde i browseren (undgår hydration-mismatch)
+const screenWidth = ref(null);
 
 onMounted(() => {
   screenWidth.value = window.innerWidth;
 });
 
+// Beregner den korrekte billed-URL ud fra skærmbredden, sender et mindre billede til mobil
 const heroImgUrl = computed(() => {
   const item = heroBillede.value?.items?.[0];
   const assetId = item?.fields?.heroImg?.[0]?.sys?.id;
@@ -89,17 +96,20 @@ const heroImgUrl = computed(() => {
   );
   if (!asset) return null;
 
+  const w = screenWidth.value;
   let width;
-  if (screenWidth.value < 992) {
-    width = 600;
-  } else if (screenWidth.value < 1510) {
-    width = 992;
-  } else {
+  if (w === null || w >= 1510) {
     width = 1920;
+  } else if (w < 992) {
+    width = 600;
+  } else {
+    width = 992;
   }
 
   return `https:${asset.fields.file.url}?w=${width}&q=80&fm=webp`;
 });
+
+// Henter tekst-indholdet til glasbox-boksen oven på hero-billedet
 const { data: glassBox } = await useFetch("/api/contentful", {
   query: {
     contentType: "heroGlassBox",
@@ -119,11 +129,14 @@ const { data: glassBox } = await useFetch("/api/contentful", {
       :hero-tagline="glassBox?.items?.[0]?.fields?.heroTagline"
     />
   </div>
-
+<div class="container container--md mt-4 mb-3">
+    <p class="section_sub_headline">Se frem til</p>
+    <h2 class="section_headline">Kommende koncerter</h2>
+  </div>
   <ConcertMenu :concert="koncerter" />
 
   <div class="container container--sm mt-5 mb-3">
-    <h2 class="section_sub_headline">Er du gammel nok?</h2>
+    <p class="section_sub_headline">Er du gammel nok?</p>
     <h2 class="section_headline">Aldersgrænse til koncerter</h2>
     <p>
       Alle er velkommen til Studenterhusets koncerter. Hvis man er under 15, så
@@ -134,7 +147,7 @@ const { data: glassBox } = await useFetch("/api/contentful", {
   </div>
 
   <div class="container container--sm mt-3 mb-5">
-    <h2 class="section_sub_headline">Husk altid at</h2>
+    <p class="section_sub_headline">Husk altid at</p>
     <h2 class="section_headline">Undgå falske billetter</h2>
     <p>
       Vi har desværre set tilfælde af svindel med falske billetter, især til

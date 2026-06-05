@@ -4,8 +4,10 @@ import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 import { faBars, faXmark } from "@fortawesome/free-solid-svg-icons";
 import Logo from '../assets/images/Studenterhuset_logo.svg?component';
 
+// Giver adgang til den aktuelle URL-sti, fx "/concerts"
 const route = useRoute();
 
+// Lukker mobilmenuen automatisk hver gang brugeren navigerer til en ny side
 watch(
   () => route.path,
   () => {
@@ -13,16 +15,22 @@ watch(
   },
 );
 
+// Holder styr på vinduets bredde, så vi kan skifte mellem desktop- og mobilnavigation
 const windowWidth = ref(0);
+
+// Styrer om mobilmenuen er åben eller lukket
 const menuOpen = ref(false);
 
+// Opdaterer windowWidth når brugeren ændrer vinduets størrelse
 const handleResize = () => (windowWidth.value = window.innerWidth);
 
+// Sætter den indledende bredde og lytter på resize-events så navigationens layout skifter live
 onMounted(() => {
   windowWidth.value = window.innerWidth;
   window.addEventListener("resize", handleResize);
 });
 
+// Rydder op ved at fjerne event-listeneren når komponenten fjernes fra siden, vigtigt for at undgå memory leaks
 onUnmounted(() => {
   window.removeEventListener("resize", handleResize);
 });

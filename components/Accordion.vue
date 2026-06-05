@@ -1,32 +1,34 @@
 <script setup>
-// Vi importere nødvendige ikoner samt ref fra Vue
 import { ref } from "vue";
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 import { faAngleDown } from "@fortawesome/free-solid-svg-icons";
+// Bruges til at konvertere Contentful's Rich Text-format til HTML
 import { documentToHtmlString } from "@contentful/rich-text-html-renderer";
 
+// Henter FAQ-indhold fra Contentful
 const { data } = await useFetch("/api/contentful", {
   query: { contentType: "faq", include: 1 },
   fresh: true,
 });
 
+// Mapper hvert FAQ-emne til en simpel datastruktur med id, titel og HTML-indhold
 const accordion = computed(() =>
   data.value?.items?.map((entry) => ({
     id: entry.sys.id,
     accordionTitle: entry.fields.titel,
-    accordionContent: documentToHtmlString(entry.fields.indhold),
+    accordionContent: documentToHtmlString(entry.fields.indhold), // konverterer Rich Text til HTML
   })),
 );
 
-// Reaktiv variabel der holder styr på hvilket accordion-element der er åbent
+// Holder styr på hvilket accordion-element der aktuelt er åbent (via id), null = alle lukket
 const openId = ref(null);
 
-// Funktion der toggler åbning/lukning af et accordion-element via dets id
+// Toggler åbning/lukning af et accordion-element, lukker det hvis det allerede er åbent
 const toggle = (id) => {
   openId.value = openId.value === id ? null : id;
 };
 
-// Indeholder referencer til accordion-elementernes indhold
+// Gemmer DOM-referencer til indholdsafsnittene, så vi kan læse deres scrollHeight til animationen
 const contentRefs = ref({});
 </script>
 

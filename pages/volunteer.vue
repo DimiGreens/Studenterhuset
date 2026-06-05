@@ -1,5 +1,8 @@
 <script setup>
+// Bruges til at konvertere Contentful's Rich Text-format til HTML
 import { documentToHtmlString } from "@contentful/rich-text-html-renderer";
+
+// Henter hero-billedet til frivillig-siden
 const { data: heroBillede } = await useFetch("/api/contentful", {
   query: {
     contentType: "heroBillede",
@@ -8,12 +11,14 @@ const { data: heroBillede } = await useFetch("/api/contentful", {
   },
 });
 
-const screenWidth = ref(1920);
+// Starter som null, sættes til den faktiske skærmbredde i browseren (undgår hydration-mismatch)
+const screenWidth = ref(null);
 
 onMounted(() => {
   screenWidth.value = window.innerWidth;
 });
 
+// Beregner den korrekte billed-URL ud fra skærmbredden, sender et mindre billede til mobil
 const heroImgUrl = computed(() => {
   const item = heroBillede.value?.items?.[0];
   const assetId = item?.fields?.heroImg?.[0]?.sys?.id;
@@ -22,18 +27,20 @@ const heroImgUrl = computed(() => {
   );
   if (!asset) return null;
 
+  const w = screenWidth.value;
   let width;
-  if (screenWidth.value < 992) {
-    width = 600;
-  } else if (screenWidth.value < 1510) {
-    width = 992;
-  } else {
+  if (w === null || w >= 1510) {
     width = 1920;
+  } else if (w < 992) {
+    width = 600;
+  } else {
+    width = 992;
   }
 
   return `https:${asset.fields.file.url}?w=${width}&q=80&fm=webp`;
 });
 
+// Henter tekst-indholdet til glasbox-boksen oven på hero-billedet
 const { data: glassBox } = await useFetch("/api/contentful", {
   query: {
     contentType: "heroGlassBox",
@@ -42,6 +49,7 @@ const { data: glassBox } = await useFetch("/api/contentful", {
   },
 });
 
+// Henter selve brødtekst-indholdet til frivillig-siden fra Contentful (Rich Text-felt)
 const { data: frivilligIndhold } = await useFetch("/api/contentful", {
   query: {
     contentType: "frivilligIndhold",
@@ -49,11 +57,13 @@ const { data: frivilligIndhold } = await useFetch("/api/contentful", {
     "fields.titel": "Frivillig indhold",
   },
 });
+
+// Omformer Rich Text-dokumentet til en HTML-streng som kan indsættes direkte i template'en med v-html
 const frivilligHtml = computed(() => {
   const doc = frivilligIndhold.value?.items?.[0]?.fields?.indhold;
   return doc ? documentToHtmlString(doc) : "";
 });
-console.log(frivilligIndhold.value);
+
 </script>
 
 <template>

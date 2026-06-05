@@ -22,6 +22,7 @@ const mySlides = [
   },
 ];
 
+// Henter hero-billedet til caféen-siden
 const { data: heroBillede } = await useFetch("/api/contentful", {
   query: {
     contentType: "heroBillede",
@@ -30,12 +31,14 @@ const { data: heroBillede } = await useFetch("/api/contentful", {
   },
 });
 
-const screenWidth = ref(1920);
+// Starter som null, sættes til den faktiske skærmbredde i browseren (undgår hydration-mismatch)
+const screenWidth = ref(null);
 
 onMounted(() => {
   screenWidth.value = window.innerWidth;
 });
 
+// Beregner den korrekte billed-URL ud fra skærmbredden, sender et mindre billede til mobil
 const heroImgUrl = computed(() => {
   const item = heroBillede.value?.items?.[0];
   const assetId = item?.fields?.heroImg?.[0]?.sys?.id;
@@ -44,18 +47,20 @@ const heroImgUrl = computed(() => {
   );
   if (!asset) return null;
 
+  const w = screenWidth.value;
   let width;
-  if (screenWidth.value < 992) {
-    width = 600;
-  } else if (screenWidth.value < 1510) {
-    width = 992;
-  } else {
+  if (w === null || w >= 1510) {
     width = 1920;
+  } else if (w < 992) {
+    width = 600;
+  } else {
+    width = 992;
   }
 
   return `https:${asset.fields.file.url}?w=${width}&q=80&fm=webp`;
 });
 
+// Henter tekst-indholdet til glasbox-boksen oven på hero-billedet
 const { data: glassBox } = await useFetch("/api/contentful", {
   query: {
     contentType: "heroGlassBox",
@@ -65,7 +70,7 @@ const { data: glassBox } = await useFetch("/api/contentful", {
 });
 </script>
 <template>
-  <body>
+  <div>
     <div
       class="hero full-bleed container container-md"
       :style="heroImgUrl ? { backgroundImage: `url(${heroImgUrl})` } : {}"
@@ -96,7 +101,7 @@ const { data: glassBox } = await useFetch("/api/contentful", {
         </div>
       </div>
     </div>
-  </body>
+  </div>
 </template>
 <style scoped>
 .opening-hours {

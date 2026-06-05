@@ -1,84 +1,117 @@
 <script setup>
-const mySlides = [
-  {
-    id: 1,
-    image: "https://picsum.photos/800/400?random=1",
-    title: "Slide title",
-    link: "/events",
-    buttonText: "Se Begivenheder",
-  },
-  {
-    id: 2,
-    image: "https://picsum.photos/800/400?random=2",
-    title: "Slide title",
-    link: "/events",
-    buttonText: "Se Begivenheder",
-  },
-  {
-    id: 3,
-    image: "https://picsum.photos/800/400?random=3",
-    title: "Slide title",
-    link: "/events",
-    buttonText: "Se Begivenheder",
-  },
-  {
-    id: 4,
-    image: "https://picsum.photos/800/400?random=4",
-    title: "Slide title",
-    link: "/events",
-    buttonText: "Se Begivenheder",
-  },
-];
+import { Swiper, SwiperSlide } from "swiper/vue";
+import { Pagination } from "swiper/modules";
+import "swiper/css";
+import "swiper/css/pagination";
+import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
+import { faAngleRight } from "@fortawesome/free-solid-svg-icons";
 
 const { data: heroBillede } = await useFetch("/api/contentful", {
-  query: { contentType: "heroBillede", include: 1, "fields.billedtitel": "Til Studerende Hero" },
+  query: {
+    contentType: "heroBillede",
+    include: 1,
+    "fields.billedtitel": "Til Studerende Hero",
+  },
 });
 
-const screenWidth = ref(1920)
+const screenWidth = ref(1920);
 
 onMounted(() => {
-  screenWidth.value = window.innerWidth
-})
+  screenWidth.value = window.innerWidth;
+});
 
 const heroImgUrl = computed(() => {
-  const item = heroBillede.value?.items?.[0]
-  const assetId = item?.fields?.heroImg?.[0]?.sys?.id
-  const asset = heroBillede.value?.includes?.Asset?.find(a => a.sys.id === assetId)
-  if (!asset) return null
+  const item = heroBillede.value?.items?.[0];
+  const assetId = item?.fields?.heroImg?.[0]?.sys?.id;
+  const asset = heroBillede.value?.includes?.Asset?.find(
+    (a) => a.sys.id === assetId,
+  );
+  if (!asset) return null;
 
-  let width
+  let width;
   if (screenWidth.value < 992) {
-    width = 600
+    width = 600;
   } else if (screenWidth.value < 1510) {
-    width = 992
+    width = 992;
   } else {
-    width = 1920
+    width = 1920;
   }
 
-  return `https:${asset.fields.file.url}?w=${width}&q=80&fm=webp`
-})
+  return `https:${asset.fields.file.url}?w=${width}&q=80&fm=webp`;
+});
 
 const { data: glassBox } = await useFetch("/api/contentful", {
-  query: { contentType: "heroGlassBox", include: 1, "fields.titel": "Glass box til studerende" },
+  query: {
+    contentType: "heroGlassBox",
+    include: 1,
+    "fields.titel": "Glass box til studerende",
+  },
 });
+
+// ── BEGIVENHEDER ───────────────────────────────────────
+const { data: eventData } = await useFetch("/api/contentful", {
+  query: { contentType: "begivenheder", include: 3 },
+  fresh: true,
+});
+
+const allEventAssets = eventData.value?.includes?.Asset ?? [];
+
+const resolveEventAsset = (assetLink) => {
+  if (!assetLink?.sys?.id) return null;
+  const asset = allEventAssets.find((a) => a.sys.id === assetLink.sys.id);
+  return asset ? "https:" + asset.fields.file.url : null;
+};
+
+const formatEventDate = (iso) => {
+  if (!iso) return "";
+  const d = new Date(iso);
+  return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
+};
+
+const today = new Date();
+today.setHours(0, 0, 0, 0);
+
+const kommendBegivenheder = (eventData.value?.items ?? [])
+  .map((item) => {
+    const f = item.fields;
+    return {
+      id: item.sys.id,
+      titel: f.titel ?? "",
+      billede: Array.isArray(f.billeder)
+        ? resolveEventAsset(f.billeder[0])
+        : null,
+      dato: formatEventDate(f.dato),
+      pris: f.pris ?? null,
+      _dateObj: f.dato ? new Date(f.dato) : null,
+    };
+  })
+  .filter((e) => e._dateObj && e._dateObj >= today)
+  .sort((a, b) => a._dateObj - b._dateObj)
+  .slice(0, 3);
+
+function goToEvent(id) {
+  if (window.innerWidth >= 993) {
+    navigateTo(`/events?open=${id}`);
+  } else {
+    navigateTo("/events");
+  }
+}
 </script>
+
 <template>
-  <div class="hero full-bleed container container-md"
-  :style="heroImgUrl ? { backgroundImage: `url(${heroImgUrl})` } : {}">
-    <HeroGlassBox 
-    :heading="glassBox?.items?.[0]?.fields?.heading"
-    :hero-tagline="glassBox?.items?.[0]?.fields?.heroTagline"
-  />
+  <div
+    class="hero full-bleed container container-md"
+    :style="heroImgUrl ? { backgroundImage: `url(${heroImgUrl})` } : {}"
+  >
+    <HeroGlassBox
+      :heading="glassBox?.items?.[0]?.fields?.heading"
+      :hero-tagline="glassBox?.items?.[0]?.fields?.heroTagline"
+    />
   </div>
-  <div class="container container--md">
-    <h2>Til Studerende</h2>
-    <p>
-      Studenterhuset tilbyder nogle tilbud til studerende, det indebærer en
-      læsesal, grupperum og leje af lokaler.
-    </p>
-  </div>
-  <div class="container container--md mt-5">
-    <h2>Læsesalen</h2>
+
+  <div class="container container--sm mt-5">
+    <h2 class="section_sub_headline">Læs op i</h2>
+    <h2 class="section_headline">Læsesalen</h2>
     <p>
       Læsesalen er åben døgnet rundt, men kun for studerende med gyldigt AAU-
       eller UCN-studiekort. Studerende med gyldigt AAU-studiekort har automatisk
@@ -87,22 +120,17 @@ const { data: glassBox } = await useFetch("/api/contentful", {
       få det oprettet.
     </p>
   </div>
-  <div class="container container--md mt-5">
-    <h2>Booking af AAU-Grupperum</h2>
+
+  <div class="container container--sm mt-5">
+    <h2 class="section_sub_headline">Plads til gruppearbejdet</h2>
+    <h2 class="section_headline">Booking af AAU-Grupperum</h2>
     <p>
       På Studenterhuset er det muligt at booke grupperumslokalerne: 311, 312,
       313, 314, 404 og 406. Dette administreres af Campus Service AAU, og ikke
       Studenterhuset. Det er kun studerende på Aalborg Universitet, der kan
       benytte lokalerne.
     </p>
-    <p>
-      Lokalerne bookes gennem følgende link:
-      <a
-        target="_blank"
-        href="https://book01.webbook.dk/auc/portal_booking2/index.php"
-        >https://book01.webbook.dk/auc/portal_booking2/index.php</a
-      >
-    </p>
+    <p>Lokalerne bookes gennem følgende link: ></p>
     <p>Benyt gæstelogin</p>
     <ul>
       <li>Bruger: guest</li>
@@ -114,8 +142,10 @@ const { data: glassBox } = await useFetch("/api/contentful", {
       ved booking.
     </p>
   </div>
-  <div class="container container--md mt-5">
-    <h2>Leje af lokaler</h2>
+
+  <div class="container container--sm mt-5">
+    <h2 class="section_sub_headline">Mangler du lokale til dit næste event?</h2>
+    <h2 class="section_headline">Leje af lokaler</h2>
     <p>
       Studenterhuset Aalborg består foruden caféen af en koncertsal og et mindre
       lokale på 1. sal kaldet Stargate.
@@ -137,31 +167,91 @@ const { data: glassBox } = await useFetch("/api/contentful", {
       vil afhænge af typen af arrangement.
     </p>
   </div>
-  <div class="container container--md card card--active mt-5">
-    <h2>Bliv frivillig</h2>
-    <p>
-      Studenterhuset er drevet af bl.a. frivillige, de spiller faktisk en stor
-      rolle for os, for uden dem kunne vi ikke levere alle de fantastiske
-      oplevelser vi er kendt for. Bliv en del af et fedt fællesskab og læs mere
-      om hvad det vil sige at være frivillig på Studenterhuset.
-    </p>
-    <div class="cafe_image mt-2">
-      <img src="../assets/images/Studenterhuset_frivillig.jpg" alt="" />
-      <NuxtLink class="cta glass card__cta" to="/volunteer">
-        Bliv Frivillig <FontAwesomeIcon :icon="faAngleRight" />
-      </NuxtLink>
+
+  <div class="container container--md container_desktop_split mt-5 mb-5">
+    <img src="../assets/images/Studenterhuset_frivillig.jpg" alt="" />
+    <div class="split_container">
+      <h2 class="section_headline">Bliv frivillig</h2>
+      <p>
+        Studenterhuset er drevet af bl.a. frivillige, de spiller faktisk en stor
+        rolle for os, for uden dem kunne vi ikke levere alle de fantastiske
+        oplevelser vi er kendt for. Bliv en del af et fedt fællesskab og læs
+        mere om hvad det vil sige at være frivillig på Studenterhuset.
+      </p>
+      <div class="cafe_image mt-2">
+        <NuxtLink class="button_primary_color" to="/volunteer">
+          Bliv Frivillig <FontAwesomeIcon :icon="faAngleRight" />
+        </NuxtLink>
+      </div>
     </div>
   </div>
-  <div class="container container--md mb-5 mt-5">
-    <h2>Begivenheder</h2>
+
+  <!-- BEGIVENHEDER -->
+  <div class="container container--md mb-5">
+    <p class="section_sub_headline">Oplev fællesskabet</p>
+    <h2 class="section_headline">Begivenheder</h2>
     <p>
       På Studenterhuset har vi nogle fede begivenheder som vores faste
       fredagsbar, brætspilsaften og queer night, kom ned med dine venner eller
       kom alene og bliv en del af fællesskabet.
     </p>
-    <ImageSlider :slides="mySlides" />
+
+    <!-- Desktop grid -->
+    <div class="desktop_grid">
+      <div
+        v-for="item in kommendBegivenheder"
+        :key="item.id"
+        class="event"
+        @click="goToEvent(item.id)"
+      >
+        <div class="event_image">
+          <img :src="item.billede" alt="" />
+        </div>
+        <div class="event_info">
+          <p class="event_cardName">{{ item.titel }}</p>
+          <div class="event_dateAndPrice">
+            <p class="event_cardDate">{{ item.dato }}</p>
+            <p class="event_cardPrice">
+              {{ item.pris ? item.pris + ",-" : "Gratis" }}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <NuxtLink class="cta button_primary_color" to="/events">
+      Se Begivenheder <FontAwesomeIcon :icon="faAngleRight" />
+    </NuxtLink>
+
+    <!-- Mobile swiper -->
+    <Swiper
+      :modules="[Pagination]"
+      :slides-per-view="1"
+      :space-between="16"
+      :pagination="{ clickable: true }"
+      :auto-height="true"
+      class="mobile_swiper"
+    >
+      <SwiperSlide v-for="item in kommendBegivenheder" :key="item.id">
+        <div class="event" @click="goToEvent(item.id)">
+          <div class="event_image">
+            <img :src="item.billede" alt="" />
+          </div>
+          <div class="event_info">
+            <p class="event_cardName">{{ item.titel }}</p>
+            <div class="event_dateAndPrice">
+              <p class="event_cardDate">{{ item.dato }}</p>
+              <p class="event_cardPrice">
+                {{ item.pris ? item.pris + ",-" : "Gratis" }}
+              </p>
+            </div>
+          </div>
+        </div>
+      </SwiperSlide>
+    </Swiper>
   </div>
 </template>
+
 <style scoped>
 .hero_image {
   margin: 0 -15px;
@@ -171,6 +261,107 @@ const { data: glassBox } = await useFetch("/api/contentful", {
     width: 100%;
     object-fit: cover;
     object-position: center;
+  }
+}
+
+/* ── KORT ──────────────────────────────────────────── */
+.event {
+  background: white;
+  border-radius: 16px;
+  overflow: hidden;
+  cursor: pointer;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.event:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+}
+
+.event_image {
+  position: relative;
+  overflow: hidden;
+}
+
+.event_image img {
+  width: 100%;
+  height: 250px;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+  transition: transform 0.3s ease;
+}
+
+.event:hover .event_image img {
+  transform: scale(1.05);
+}
+
+.event_info {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 15px;
+  background: #eeeeff;
+}
+
+.event_cardName {
+  color: #0b1071;
+  font-family: "Barlow Condensed", sans-serif;
+  font-size: 32px;
+  font-weight: bold;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.event_dateAndPrice {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-top: 15px;
+}
+
+.event_cardDate {
+  font-family: "Barlow Condensed", sans-serif;
+  color: #535353;
+  font-size: 16px;
+}
+
+.event_cardPrice {
+  font-family: "Barlow Condensed", sans-serif;
+  font-size: 20px;
+  color: #535353;
+  font-weight: 600;
+}
+
+/* ── GRID / SWIPER ─────────────────────────────────── */
+.desktop_grid {
+  display: none;
+  margin: 24px 0;
+}
+
+.mobile_swiper {
+  display: block;
+  margin: 24px 0 40px;
+  padding-bottom: 36px;
+}
+
+:deep(.swiper-slide) {
+  height: auto;
+}
+
+@media (min-width: 993px) {
+  .desktop_grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+
+  .mobile_swiper {
+    display: none;
   }
 }
 </style>

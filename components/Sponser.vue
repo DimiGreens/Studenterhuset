@@ -15,7 +15,6 @@ const props = defineProps({
           :alt="'Sponser: ' + item.sponserName"
           class="sponser_image"
         />
-        {{ item.sponserName }}
       </a>
     </div>
   </div>
@@ -38,8 +37,8 @@ const props = defineProps({
 }
 
 .sponser_image {
-  width: 100%;
-  height: auto;
+  width: auto;
+  max-height: 250px;
   object-fit: cover;
   object-position: center;
 }

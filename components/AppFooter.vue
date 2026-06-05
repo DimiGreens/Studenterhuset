@@ -64,6 +64,10 @@ import Logo from "../assets/images/Studenterhuset_logo.svg?component";
 .site_footer {
   background-color: #5774b8;
   color: white;
+
+  * {
+    font-family: "Inter", sans-serif;
+  }
 }
 
 .footer_inner {

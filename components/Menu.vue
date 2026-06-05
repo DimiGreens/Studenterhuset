@@ -105,6 +105,10 @@ const menu = data.value.items[0].fields.menuSektioner
 .menucard-wrapper {
   width: 100%;
 
+  * {
+    font-family: "Barlow Condensed", sans-serif;
+  }
+
   h2 {
     margin-bottom: 15px;
     padding-left: 150px;

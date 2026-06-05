@@ -34,20 +34,20 @@ const heroImgUrl = computed(() => {
   return `https:${asset.fields.file.url}?w=${width}&q=80&fm=webp`;
 });
 
-    const { data: glassBox } = await useFetch("/api/contentful", {
+const { data: glassBox } = await useFetch("/api/contentful", {
   query: {
     contentType: "heroGlassBox",
     include: 1,
     "fields.titel": "Glass box frivillig",
-  }, 
+  },
 });
 
-const {data: frivilligIndhold} = await useFetch("/api/contentful", {
+const { data: frivilligIndhold } = await useFetch("/api/contentful", {
   query: {
     contentType: "frivilligIndhold",
     include: 3,
-    "fields.titel": "Frivillig indhold"
-  }
+    "fields.titel": "Frivillig indhold",
+  },
 });
 const frivilligHtml = computed(() => {
   const doc = frivilligIndhold.value?.items?.[0]?.fields?.indhold;
@@ -57,16 +57,16 @@ console.log(frivilligIndhold.value);
 </script>
 
 <template>
-    <div
-      class="hero full-bleed container container-md"
-      :style="heroImgUrl ? { backgroundImage: `url(${heroImgUrl})` } : {}"
-    >
-      <HeroGlassBox
-        :heading="glassBox?.items?.[0]?.fields?.heading"
-        :hero-tagline="glassBox?.items?.[0]?.fields?.heroTagline"
-      />
-    </div>
-   <section class="frivilligContainer" v-html="frivilligHtml"></section>
+  <div
+    class="hero full-bleed container container-md"
+    :style="heroImgUrl ? { backgroundImage: `url(${heroImgUrl})` } : {}"
+  >
+    <HeroGlassBox
+      :heading="glassBox?.items?.[0]?.fields?.heading"
+      :hero-tagline="glassBox?.items?.[0]?.fields?.heroTagline"
+    />
+  </div>
+  <section class="frivilligContainer" v-html="frivilligHtml"></section>
 </template>
 
 <style scoped>
@@ -80,24 +80,41 @@ console.log(frivilligIndhold.value);
   white-space: pre-line;
 }
 
-.frivilligContainer :deep(h2) { 
-    font-size: 1.5rem; margin-bottom: 0.5rem; 
+.frivilligContainer :deep(h2) {
+  margin-bottom: 0.5rem;
+  color: #040048;
+  font-size: 36px;
+
+  @media screen and (min-width: 993px) {
+    font-size: 64px;
+  }
 }
-.frivilligContainer :deep(p)  { 
-    margin-bottom: 1rem; 
-    }
-    .frivilligContainer :deep(ul) {
-        margin-inline-start: 15px;
-    }
-    @media screen and (min-width: 993px) {
-        .frivilligContainer {
-            margin: 75px;
-        }
-    }
-    @media screen and (min-width: 1510px) {
-        .frivilligContainer {
-            margin: 150px;
-            font-size: 20px;
-        }
-    }
+
+.frivilligContainer :deep(h3) {
+  margin-bottom: 0.5rem;
+  color: var(--primary);
+  font-size: 20px;
+
+  @media screen and (min-width: 993px) {
+    font-size: 32px;
+  }
+}
+
+.frivilligContainer :deep(p) {
+  margin-bottom: 1rem;
+}
+.frivilligContainer :deep(ul) {
+  margin-inline-start: 15px;
+}
+@media screen and (min-width: 993px) {
+  .frivilligContainer {
+    margin-inline: 75px;
+  }
+}
+@media screen and (min-width: 1510px) {
+  .frivilligContainer {
+    margin-inline: 150px;
+    font-size: 20px;
+  }
+}
 </style>

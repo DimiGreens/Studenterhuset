@@ -138,6 +138,74 @@ p {
 }
 
 /* =========================
+   HEADLINES
+========================= */
+
+.section_headline {
+    font-family: "Barlow Condensed", sans-serif;
+    color: #040048;
+    font-size: 36px;
+    
+    @media screen and (min-width: 993px) {
+        font-size: 64px;
+    }
+}
+
+.section_sub_headline {
+    font-family: "Barlow Condensed", sans-serif;
+    color: var(--primary);
+    font-size: 20px;
+    
+    @media screen and (min-width: 993px) {
+        font-size: 32px;
+    }
+}
+
+.smaller_headline {
+    color: #0B1071;
+    font-size: 48px;
+    font-family: "Barlow Condensed", sans-serif;
+}
+
+/* =========================
+   BUTTONS
+========================= */
+
+.button_primary_color {
+    background-color: var(--primary);
+    font-family: "Inter", sans-serif;
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: white;
+    font-size: 20px;
+    padding: 12px 24px;
+    border-radius: 100px;
+    text-decoration: none;
+    margin-top: 8px;
+    border: none;
+}
+
+/* =========================
+CARD BACKGROUNDS
+========================= */
+
+.card_primary_background {
+    background-color: #EEEEFF;
+    padding: 15px;
+    border-radius: 25px;
+    
+    img {
+        border-radius: 25px;
+    }
+    
+    label {
+        font-family: "Inter", sans-serif;
+    }
+}
+
+/* =========================
    GLASS SYSTEM (KEEP YOUR STYLE)
 ========================= */
 
@@ -205,12 +273,52 @@ p {
     padding: 0 15px;
 }
 
+@media screen and (min-width: 993px) {
+    .section_container {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+
+        a {
+            justify-self: end;
+            align-self: center;
+        }
+    }
+}
+
 .container--sm {
-    max-width: var(--container-sm);
+    @media screen and (min-width: 993px) {
+        padding: 0 80px;
+    }
+    
+    @media screen and (min-width: 1510px) {
+        padding: 0 300px;
+    }
 }
 
 .container--md {
-    max-width: var(--container-md);
+    @media screen and (min-width: 993px) {
+        padding: 0 80px;
+    }
+    
+    @media screen and (min-width: 1510px) {
+        padding: 0 150px;
+    }
+}
+
+.container_desktop_split{
+
+    img {
+        border-radius: 25px;
+    }
+
+    @media screen and (min-width: 1510px) {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+
+        .split_container{
+            padding: 50px;
+        }
+    }
 }
 
 .container--lg {

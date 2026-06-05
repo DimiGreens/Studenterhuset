@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from "vue";
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
-import FilterLogo from '../assets/images/Filter.svg?component';
+import FilterLogo from "../assets/images/Filter.svg?component";
 import {
   faAngleDown,
   faAngleRight,
@@ -46,7 +46,7 @@ const maxPrice = ref(500);
 
 // Udregner placering og bredde af den udfyldte del af slideren
 const rangeFillStyle = computed(() => {
-  const span = (maxPrice.value - minPrice.value) || 1;
+  const span = maxPrice.value - minPrice.value || 1;
   const left = ((priceRange.value[0] - minPrice.value) / span) * 100;
   const right = ((priceRange.value[1] - minPrice.value) / span) * 100;
   return { left: `${left}%`, width: `${right - left}%` };
@@ -137,13 +137,13 @@ onMounted(async () => {
 
     const eventDates = new Set(
       props.events
-    .filter((e) => {
-      if (e.fastBegivenhed) return false;
-      if (!e.dato) return false;
-      const [day, month, year] = e.dato.split("/");
-      return new Date(year, month - 1, day) >= today;
-    })
-    .map((e) => e.dato),
+        .filter((e) => {
+          if (e.fastBegivenhed) return false;
+          if (!e.dato) return false;
+          const [day, month, year] = e.dato.split("/");
+          return new Date(year, month - 1, day) >= today;
+        })
+        .map((e) => e.dato),
     );
 
     datePicker.value = flatpickr(dateInput.value, {
@@ -203,8 +203,8 @@ const enkeltBegivenheder = computed(() => {
     const q = searchQuery.value.toLowerCase();
     result = result.filter((item) =>
       [item.titel, item.kategori].some((field) =>
-        field?.toLowerCase().includes(q)
-      )
+        field?.toLowerCase().includes(q),
+      ),
     );
   }
 
@@ -231,7 +231,7 @@ watch(
     await nextTick();
     calculateOverflow();
   },
-  { deep: true }
+  { deep: true },
 );
 
 const openModal = (item) => {
@@ -270,9 +270,8 @@ function handleClick(item) {
 </script>
 
 <template>
-  <div class="event-section container container--lg">
+  <div class="container container--md">
     <section v-if="fasteBegivenheder.length > 0" class="event_section_group">
-      <h2 class="section_heading">Faste begivenheder</h2>
       <div class="card_wrapper">
         <div
           v-for="item in fasteBegivenheder"
@@ -295,10 +294,14 @@ function handleClick(item) {
           <div class="event_info">
             <div
               class="event_cardName"
-              :ref="el => setTitleRef(el, item.id)"
+              :ref="(el) => setTitleRef(el, item.id)"
               :class="{ overflowing: overflowingTitles[item.id] }"
             >
-              <span :style="{ '--scroll-distance': `${scrollDistances[item.id] || 0}px` }">
+              <span
+                :style="{
+                  '--scroll-distance': `${scrollDistances[item.id] || 0}px`,
+                }"
+              >
                 {{ item.titel }}
               </span>
             </div>
@@ -311,11 +314,18 @@ function handleClick(item) {
           </div>
 
           <div
-            :ref="(el) => { if (el) contentRefs[item.id] = el; }"
+            :ref="
+              (el) => {
+                if (el) contentRefs[item.id] = el;
+              }
+            "
             class="event_content"
             :style="
               openId === item.id
-                ? { maxHeight: contentRefs[item.id]?.scrollHeight + 'px', paddingBottom: '20px' }
+                ? {
+                    maxHeight: contentRefs[item.id]?.scrollHeight + 'px',
+                    paddingBottom: '20px',
+                  }
                 : { maxHeight: '0px', paddingBottom: '0px' }
             "
           >
@@ -342,7 +352,12 @@ function handleClick(item) {
             </div>
             <p class="event_info_box">{{ item.beskrivelse }}</p>
             <div v-if="item.billetLink" class="button_wrapper">
-              <a :href="item.billetLink" target="_blank" class="glass ticket_button">Køb billet</a>
+              <a
+                :href="item.billetLink"
+                target="_blank"
+                class="glass ticket_button"
+                >Køb billet</a
+              >
             </div>
           </div>
         </div>
@@ -350,12 +365,16 @@ function handleClick(item) {
     </section>
 
     <section class="event_section_group">
-      <h2 class="section_heading">Kommende begivenheder</h2>
-
+      <h2 class="section_sub_headline">Se frem til</h2>
+      <h2 class="section_headline">Kommende begivenheder</h2>
       <div class="filter_button_search_wrapper">
         <button class="filter_toggle" @click="filterOpen = !filterOpen">
           <span>Filter</span>
-          <FontAwesomeIcon class="filter_icon" v-if="filterOpen" :icon="faXmark" />
+          <FontAwesomeIcon
+            class="filter_icon"
+            v-if="filterOpen"
+            :icon="faXmark"
+          />
           <FilterLogo class="filter_icon" v-else />
         </button>
 
@@ -438,7 +457,9 @@ function handleClick(item) {
         >
           <div class="event_image">
             <img :src="item.billede" alt="" />
-            <span v-if="item.kategori" class="event_tag">{{ item.kategori }}</span>
+            <span v-if="item.kategori" class="event_tag">{{
+              item.kategori
+            }}</span>
             <div class="event_button_wrapper">
               <button class="event_button glass" @click.stop="toggle(item.id)">
                 <FontAwesomeIcon
@@ -452,10 +473,14 @@ function handleClick(item) {
           <div class="event_info">
             <div
               class="event_cardName"
-              :ref="el => setTitleRef(el, item.id)"
+              :ref="(el) => setTitleRef(el, item.id)"
               :class="{ overflowing: overflowingTitles[item.id] }"
             >
-              <span :style="{ '--scroll-distance': `${scrollDistances[item.id] || 0}px` }">
+              <span
+                :style="{
+                  '--scroll-distance': `${scrollDistances[item.id] || 0}px`,
+                }"
+              >
                 {{ item.titel }}
               </span>
             </div>
@@ -471,11 +496,18 @@ function handleClick(item) {
           </div>
 
           <div
-            :ref="(el) => { if (el) contentRefs[item.id] = el; }"
+            :ref="
+              (el) => {
+                if (el) contentRefs[item.id] = el;
+              }
+            "
             class="event_content"
             :style="
               openId === item.id
-                ? { maxHeight: contentRefs[item.id]?.scrollHeight + 'px', paddingBottom: '20px' }
+                ? {
+                    maxHeight: contentRefs[item.id]?.scrollHeight + 'px',
+                    paddingBottom: '20px',
+                  }
                 : { maxHeight: '0px', paddingBottom: '0px' }
             "
           >
@@ -499,7 +531,12 @@ function handleClick(item) {
             </div>
             <p class="event_info_box">{{ item.beskrivelse }}</p>
             <div v-if="item.billetLink" class="button_wrapper">
-              <a :href="item.billetLink" target="_blank" class="glass ticket_button">Køb billet</a>
+              <a
+                :href="item.billetLink"
+                target="_blank"
+                class="glass ticket_button"
+                >Køb billet</a
+              >
             </div>
           </div>
         </div>
@@ -543,7 +580,10 @@ function handleClick(item) {
                       title="Fast begivenhed"
                     />
                   </h2>
-                  <p class="event_info_box" v-html="selectedEvent.beskrivelse"></p>
+                  <p
+                    class="event_info_box"
+                    v-html="selectedEvent.beskrivelse"
+                  ></p>
                 </div>
                 <div class="event_info modal_info">
                   <div class="infoText">
@@ -561,7 +601,11 @@ function handleClick(item) {
                   <div class="infoText">
                     <p>Pris:</p>
                     <p class="event_cardPrice">
-                      {{ selectedEvent.pris ? selectedEvent.pris + ",-" : "Gratis" }}
+                      {{
+                        selectedEvent.pris
+                          ? selectedEvent.pris + ",-"
+                          : "Gratis"
+                      }}
                     </p>
                     <p>{{ selectedEvent.note }}</p>
                   </div>
@@ -570,7 +614,8 @@ function handleClick(item) {
                       :href="selectedEvent.billetLink"
                       target="_blank"
                       class="glass ticket_button"
-                    >Køb billet</a>
+                      >Køb billet</a
+                    >
                   </div>
                 </div>
               </div>
@@ -578,7 +623,10 @@ function handleClick(item) {
 
             <div class="modal_sidebar">
               <h3>Andre begivenheder</h3>
-              <p v-if="otherEvents.length === 0" style="color: white; font-size: 14px">
+              <p
+                v-if="otherEvents.length === 0"
+                style="color: white; font-size: 14px"
+              >
                 Ingen andre kommende begivenheder
               </p>
               <div
@@ -591,7 +639,10 @@ function handleClick(item) {
                 <div class="sidebar_overlay">
                   <span class="glass">
                     {{ item.titel }}
-                    <FontAwesomeIcon :icon="faAngleRight" class="sidebar_icon" />
+                    <FontAwesomeIcon
+                      :icon="faAngleRight"
+                      class="sidebar_icon"
+                    />
                   </span>
                 </div>
               </div>
@@ -615,7 +666,10 @@ function handleClick(item) {
             <button class="slider_arrow left glass" @click="prevSlide">
               <FontAwesomeIcon :icon="faAngleLeft" />
             </button>
-            <img :src="sliderEvent.billeder[sliderIndex]" class="slider_image" />
+            <img
+              :src="sliderEvent.billeder[sliderIndex]"
+              class="slider_image"
+            />
             <button class="slider_arrow right glass" @click="nextSlide">
               <FontAwesomeIcon :icon="faAngleRight" />
             </button>
@@ -635,7 +689,6 @@ function handleClick(item) {
 </template>
 
 <style scoped>
-
 .desktop_search {
   display: none;
 }
@@ -782,8 +835,12 @@ function handleClick(item) {
 }
 
 @keyframes marquee {
-  from { transform: translateX(0); }
-  to   { transform: translateX(calc(var(--scroll-distance) * -1)); }
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(calc(var(--scroll-distance) * -1));
+  }
 }
 
 .event_content {

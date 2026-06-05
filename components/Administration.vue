@@ -16,9 +16,19 @@ const Administration = computed(
 );
 </script>
 <template>
-  <h2>Administration</h2>
-  <p v-for="item in Administration" :key="item.mail">
+  <h2 class="smaller_headline">Administration</h2>
+  <p v-for="item in Administration" :key="item.mail" class="section">
     {{ item.name }}: <a :href="`mailto:${item.mail}`">{{ item.mail }}</a>
   </p>
 </template>
-<style scoped></style>
+<style scoped>
+.section {
+  * {
+    font-family: "Inter", sans-serif;
+  }
+}
+
+p {
+  padding: 5px 0;
+}
+</style>

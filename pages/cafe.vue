@@ -78,19 +78,22 @@ const { data: glassBox } = await useFetch("/api/contentful", {
     <div>
       <Menu :menuItem="menuItem" />
     </div>
-    <div class="container container--md card card--active mb-5">
-      <h2>Bliv frivillig</h2>
-      <p>
-        Studenterhuset er drevet af bl.a. frivillige, de spiller faktisk en stor
-        rolle for os, for uden dem kunne vi ikke levere alle de fantastiske
-        oplevelser vi er kendt for. Bliv en del af et fedt fællesskab og læs
-        mere om hvad det vil sige at være frivillig på Studenterhuset.
-      </p>
-      <div class="cafe_image mt-2">
-        <img src="../assets/images/Studenterhuset_frivillig.jpg" alt="" />
-        <NuxtLink class="cta glass card__cta" to="/volunteer">
-          Bliv Frivillig <FontAwesomeIcon :icon="faAngleRight" />
-        </NuxtLink>
+    <div class="container container--md container_desktop_split mt-5 mb-5">
+      <img src="../assets/images/Studenterhuset_frivillig.jpg" alt="" />
+      <div class="split_container">
+        <h2 class="section_headline">Bliv frivillig</h2>
+        <p>
+          Studenterhuset er drevet af bl.a. frivillige, de spiller faktisk en
+          stor rolle for os, for uden dem kunne vi ikke levere alle de
+          fantastiske oplevelser vi er kendt for. Bliv en del af et fedt
+          fællesskab og læs mere om hvad det vil sige at være frivillig på
+          Studenterhuset.
+        </p>
+        <div class="cafe_image mt-2">
+          <NuxtLink class="button_primary_color" to="/volunteer">
+            Bliv Frivillig <FontAwesomeIcon :icon="faAngleRight" />
+          </NuxtLink>
+        </div>
       </div>
     </div>
   </body>

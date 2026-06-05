@@ -17,7 +17,7 @@ const Contact = computed(
 );
 </script>
 <template>
-  <h2>Kontakt</h2>
+  <h2 class="smaller_headline">Kontakt</h2>
   <div v-for="item in Contact" :key="item.text" class="contact-row">
     <span class="contact-text">{{ item.text }}</span>
 
@@ -36,5 +36,9 @@ const Contact = computed(
   gap: 8px;
   align-items: flex-end;
   margin-bottom: 6px;
+
+  * {
+    font-family: "Inter", sans-serif;
+  }
 }
 </style>

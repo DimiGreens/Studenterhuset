@@ -164,44 +164,41 @@ function goToConcert(id) {
     />
   </div>
 
-  <div class="container container--md mt-4">
-    <img src="../assets/images/Studenterhuset_logo_sort.jpg" alt="" />
-    <p>
-      Velkommen til studenterhuset. I fællesskab skaber vi koncerter, debatter,
-      events og aktiviteter til gavn ikke kun for studielivet, men for hele
-      byen.
-    </p>
-    <p>
-      Vi omfavner mangfoldighed og byder alle velkommen, uanset politiske
-      overbevisninger, seksuelle orienteringer eller trosretninger.
-    </p>
-  </div>
-
+  <!-- KONCERTER -->
   <div class="container container--md mb-5">
-    <p class="section_tagline">Live på scenen</p>
-    <h2>Kommende koncerter</h2>
-    <p>
-      Studenterhuset afholder mange koncerter, i alle mulige forskellige genrer,
-      så mon ikke der en til netop dig eller dig og dine venner. Gå på opdagelse
-      i vores kommende koncerter - vi glæder os til at se dig!
-    </p>
+    <p class="section_sub_headline">Live på scenen</p>
+    <h2 class="section_headline">Kommende koncerter</h2>
 
+    <div class="section_container">
+      <p>
+        Studenterhuset afholder mange koncerter, i alle mulige forskellige
+        genrer, så mon ikke der en til netop dig eller dig og dine venner. Gå på
+        opdagelse i vores kommende koncerter - vi glæder os til at se dig!
+      </p>
+      <NuxtLink class="cta button_primary_color" to="/concerts">
+        Opdag Koncerter <FontAwesomeIcon :icon="faAngleRight" />
+      </NuxtLink>
+    </div>
+
+    <!-- Desktop grid -->
     <div class="desktop_grid">
       <div
         v-for="item in kommendKoncerter"
         :key="item.id"
-        class="desktop_card"
+        class="concert"
         @click="goToConcert(item.id)"
       >
-        <div class="card_image">
+        <div class="concert_image">
           <img :src="item.bandImage" alt="" />
-          <span v-if="item.genre" class="card_tag">{{ item.genre }}</span>
+          <span v-if="item.genre" class="concert_genre_tag">{{
+            item.genre
+          }}</span>
         </div>
-        <div class="card_info">
-          <p class="card_name">{{ item.bandName }}</p>
-          <div class="card_meta">
-            <p class="card_date">{{ item.date }}</p>
-            <p class="card_price">
+        <div class="concert_info">
+          <p class="band_cardName">{{ item.bandName }}</p>
+          <div class="band_dateAndPrice">
+            <p class="band_cardDate">{{ item.date }}</p>
+            <p class="band_cardPrice">
               {{ item.price ? item.price + ",-" : "Gratis" }}
             </p>
           </div>
@@ -209,6 +206,7 @@ function goToConcert(id) {
       </div>
     </div>
 
+    <!-- Mobile swiper -->
     <Swiper
       :modules="[Pagination]"
       :slides-per-view="1"
@@ -218,16 +216,18 @@ function goToConcert(id) {
       class="mobile_swiper"
     >
       <SwiperSlide v-for="item in kommendKoncerter" :key="item.id">
-        <div class="mobile_card" @click="goToConcert(item.id)">
-          <div class="card_image">
+        <div class="concert" @click="goToConcert(item.id)">
+          <div class="concert_image">
             <img :src="item.bandImage" alt="" />
-            <span v-if="item.genre" class="card_tag">{{ item.genre }}</span>
+            <span v-if="item.genre" class="concert_genre_tag">{{
+              item.genre
+            }}</span>
           </div>
-          <div class="card_info">
-            <p class="card_name">{{ item.bandName }}</p>
-            <div class="card_meta">
-              <p class="card_date">{{ item.date }}</p>
-              <p class="card_price">
+          <div class="concert_info">
+            <p class="band_cardName">{{ item.bandName }}</p>
+            <div class="band_dateAndPrice">
+              <p class="band_cardDate">{{ item.date }}</p>
+              <p class="band_cardPrice">
                 {{ item.price ? item.price + ",-" : "Gratis" }}
               </p>
             </div>
@@ -235,36 +235,40 @@ function goToConcert(id) {
         </div>
       </SwiperSlide>
     </Swiper>
-
-    <NuxtLink class="cta glass preview_cta" to="/concerts">
-      Opdag Koncerter <FontAwesomeIcon :icon="faAngleRight" />
-    </NuxtLink>
   </div>
 
+  <!-- BEGIVENHEDER -->
   <div class="container container--md mb-5">
-    <p class="section_tagline">Oplev fællesskabet</p>
-    <h2>Begivenheder</h2>
-    <p>
-      På Studenterhuset har vi nogle fede begivenheder som vores faste
-      fredagsbar, brætspilsaften og queer night, kom ned med dine venner eller
-      kom alene og bliv en del af fællesskabet.
-    </p>
+    <p class="section_sub_headline">Oplev fællesskabet</p>
+    <h2 class="section_headline">Begivenheder</h2>
 
+    <div class="section_container">
+      <p>
+        På Studenterhuset har vi nogle fede begivenheder som vores faste
+        fredagsbar, brætspilsaften og queer night, kom ned med dine venner eller
+        kom alene og bliv en del af fællesskabet.
+      </p>
+      <NuxtLink class="cta button_primary_color" to="/events">
+        Se Begivenheder <FontAwesomeIcon :icon="faAngleRight" />
+      </NuxtLink>
+    </div>
+
+    <!-- Desktop grid -->
     <div class="desktop_grid">
       <div
         v-for="item in kommendBegivenheder"
         :key="item.id"
-        class="desktop_card"
+        class="event"
         @click="goToEvent(item.id)"
       >
-        <div class="card_image">
+        <div class="event_image">
           <img :src="item.billede" alt="" />
         </div>
-        <div class="card_info">
-          <p class="card_name">{{ item.titel }}</p>
-          <div class="card_meta">
-            <p class="card_date">{{ item.dato }}</p>
-            <p class="card_price">
+        <div class="event_info">
+          <p class="event_cardName">{{ item.titel }}</p>
+          <div class="event_dateAndPrice">
+            <p class="event_cardDate">{{ item.dato }}</p>
+            <p class="event_cardPrice">
               {{ item.pris ? item.pris + ",-" : "Gratis" }}
             </p>
           </div>
@@ -272,6 +276,7 @@ function goToConcert(id) {
       </div>
     </div>
 
+    <!-- Mobile swiper -->
     <Swiper
       :modules="[Pagination]"
       :slides-per-view="1"
@@ -281,15 +286,15 @@ function goToConcert(id) {
       class="mobile_swiper"
     >
       <SwiperSlide v-for="item in kommendBegivenheder" :key="item.id">
-        <div class="mobile_card" @click="goToEvent(item.id)">
-          <div class="card_image">
+        <div class="event" @click="goToEvent(item.id)">
+          <div class="event_image">
             <img :src="item.billede" alt="" />
           </div>
-          <div class="card_info">
-            <p class="card_name">{{ item.titel }}</p>
-            <div class="card_meta">
-              <p class="card_date">{{ item.dato }}</p>
-              <p class="card_price">
+          <div class="event_info">
+            <p class="event_cardName">{{ item.titel }}</p>
+            <div class="event_dateAndPrice">
+              <p class="event_cardDate">{{ item.dato }}</p>
+              <p class="event_cardPrice">
                 {{ item.pris ? item.pris + ",-" : "Gratis" }}
               </p>
             </div>
@@ -297,33 +302,33 @@ function goToConcert(id) {
         </div>
       </SwiperSlide>
     </Swiper>
-
-    <NuxtLink class="cta glass preview_cta" to="/events">
-      Se Begivenheder <FontAwesomeIcon :icon="faAngleRight" />
-    </NuxtLink>
   </div>
 
-  <div class="container container--md card card--active">
-    <h2>Caféen</h2>
-    <p>
-      Kom ned i vores hyggelige café hvor du bl.a. kan spille bordfodbold, pool
-      og brætspil, du kan også bare komme og hænge ud med vennerne med en kop
-      kaffe, eller måske du er mere til en eller sodavand - det er ligemeget
-      hvad du er til, her er der plads til alle.
-    </p>
+  <!-- CAFÉ -->
+  <div class="container container--md container_desktop_split">
     <img
       class="cafe_image mt-2"
       src="../assets/images/Studenterhuset_cafe.jpg"
       alt=""
     />
-    <NuxtLink class="cta glass card__cta" to="/cafe">
-      Gå til caféen <FontAwesomeIcon :icon="faAngleRight" />
-    </NuxtLink>
+    <div class="split_container">
+      <h2 class="section_headline">Caféen</h2>
+      <p>
+        Kom ned i vores hyggelige café hvor du bl.a. kan spille bordfodbold,
+        pool og brætspil, du kan også bare komme og hænge ud med vennerne med en
+        kop kaffe, eller måske du er mere til en eller sodavand - det er
+        ligemeget hvad du er til, her er der plads til alle.
+      </p>
+      <NuxtLink class="button_primary_color" to="/cafe">
+        Gå til caféen <FontAwesomeIcon :icon="faAngleRight" />
+      </NuxtLink>
+    </div>
   </div>
 
-  <div class="grid grid--2 mt-5 mb-5 container container--lg">
-    <div class="card card--active">
-      <h2>Bliv frivillig</h2>
+  <!-- FRIVILLIG + NYHEDSBREV -->
+  <div class="grid grid--2 mt-5 mb-5 container container--md">
+    <div class="card_primary_background">
+      <h2 class="section_headline">Bliv frivillig</h2>
       <p>
         Studenterhuset er drevet af bl.a. frivillige, de spiller faktisk en stor
         rolle for os, for uden dem kunne vi ikke levere alle de fantastiske
@@ -332,33 +337,33 @@ function goToConcert(id) {
       </p>
       <div class="volunteer-image-wrap">
         <img src="../assets/images/Studenterhuset_frivillig.jpg" alt="" />
-        <NuxtLink class="glass cta card__cta" to="/volunteer">
+        <NuxtLink class="button_primary_color" to="/volunteer">
           Bliv Frivillig <FontAwesomeIcon :icon="faAngleRight" />
         </NuxtLink>
       </div>
     </div>
 
-    <div class="newsletter-section">
-      <h2>Nyhedsbrev</h2>
+    <div class="card_primary_background">
+      <h2 class="section_headline">Nyhedsbrev</h2>
       <p>
         Vil du holde dig opdateret på nyheder, koncerter og begivenheder, så
         tilmeld dig vores nyhedsbrev, så går du ikke glip af noget.
       </p>
       <div class="newsletter-fields">
+        <label>Navn:</label>
         <div class="newsletter-field">
-          <label>Navn:</label>
           <input type="text" placeholder="Dit navn" />
         </div>
+        <label>Efternavn:</label>
         <div class="newsletter-field">
-          <label>Efternavn:</label>
           <input type="text" placeholder="Dit efternavn" />
         </div>
+        <label>Email:</label>
         <div class="newsletter-field">
-          <label>Email:</label>
           <input type="email" placeholder="Din email" />
         </div>
       </div>
-      <button class="glass cta newsletter-btn">
+      <button class="button_primary_color">
         Tilmeld Nyhedsbrev <FontAwesomeIcon :icon="faAngleRight" />
       </button>
     </div>
@@ -366,12 +371,34 @@ function goToConcert(id) {
 </template>
 
 <style scoped>
-.card_image {
+/* ── KORT – delt styling ───────────────────────────── */
+.concert,
+.event {
+  background: white;
+  border-radius: 16px;
+  overflow: hidden;
+  cursor: pointer;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.concert:hover,
+.event:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+}
+
+/* ── BILLEDE ───────────────────────────────────────── */
+.concert_image,
+.event_image {
   position: relative;
   overflow: hidden;
 }
 
-.card_image img {
+.concert_image img,
+.event_image img {
   width: 100%;
   height: 250px;
   object-fit: cover;
@@ -380,7 +407,13 @@ function goToConcert(id) {
   transition: transform 0.3s ease;
 }
 
-.card_tag {
+.concert:hover .concert_image img,
+.event:hover .event_image img {
+  transform: scale(1.05);
+}
+
+/* ── GENRE TAG ─────────────────────────────────────── */
+.concert_genre_tag {
   position: absolute;
   top: 12px;
   left: 12px;
@@ -394,7 +427,9 @@ function goToConcert(id) {
   font-family: "Barlow Condensed", sans-serif;
 }
 
-.card_info {
+/* ── INFO-BOKS ─────────────────────────────────────── */
+.concert_info,
+.event_info {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -402,56 +437,46 @@ function goToConcert(id) {
   background: #eeeeff;
 }
 
-.card_name {
+/* ── NAVN ──────────────────────────────────────────── */
+.band_cardName,
+.event_cardName {
   color: #0b1071;
   font-family: "Barlow Condensed", sans-serif;
   font-size: 32px;
   font-weight: bold;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
-.card_meta {
+/* ── DATO + PRIS ───────────────────────────────────── */
+.band_dateAndPrice,
+.event_dateAndPrice {
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
   margin-top: 15px;
 }
 
-.card_date {
+.band_cardDate,
+.event_cardDate {
   font-family: "Barlow Condensed", sans-serif;
   color: #535353;
   font-size: 16px;
 }
 
-.card_price {
+.band_cardPrice,
+.event_cardPrice {
   font-family: "Barlow Condensed", sans-serif;
   font-size: 20px;
   color: #535353;
   font-weight: 600;
 }
 
+/* ── GRID / SWIPER LAYOUT ──────────────────────────── */
 .desktop_grid {
   display: none;
   margin: 24px 0;
-}
-
-.desktop_card {
-  background: white;
-  border-radius: 16px;
-  overflow: hidden;
-  cursor: pointer;
-  transition:
-    transform 0.3s ease,
-    box-shadow 0.3s ease;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-}
-
-.desktop_card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
-}
-
-.desktop_card:hover .card_image img {
-  transform: scale(1.05);
 }
 
 .mobile_swiper {
@@ -460,45 +485,8 @@ function goToConcert(id) {
   padding-bottom: 36px;
 }
 
-.mobile_card {
-  background: white;
-  border-radius: 16px;
-  overflow: hidden;
-  cursor: pointer;
-  transition:
-    transform 0.3s ease,
-    box-shadow 0.3s ease;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-}
-
-.mobile_card:hover .card_image img {
-  transform: scale(1.05);
-}
-
 :deep(.swiper-slide) {
   height: auto;
-}
-
-.preview_cta {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  color: white;
-  font-family: "Barlow Condensed", sans-serif;
-  font-size: 20px;
-  padding: 12px 24px;
-  border-radius: 100px;
-  text-decoration: none;
-  margin-top: 8px;
-}
-
-.section_tagline {
-  font-family: "Barlow Condensed", sans-serif;
-  font-size: 16px;
-  color: #5774b8;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-bottom: 4px;
 }
 
 @media (min-width: 993px) {
@@ -511,5 +499,10 @@ function goToConcert(id) {
   .mobile_swiper {
     display: none;
   }
+}
+
+/* ── CAFÉ ──────────────────────────────────────────── */
+.cafe_image {
+  border-radius: 25px;
 }
 </style>

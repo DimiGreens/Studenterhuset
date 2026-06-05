@@ -14,7 +14,6 @@ const { data } = await useFetch("/api/contentful", {
 const allEntries = data.value?.includes?.Entry ?? [];
 const allAssets = data.value?.includes?.Asset ?? [];
 
-
 const resolveAsset = (assetLink) => {
   if (!assetLink?.sys?.id) return null;
   const asset = allAssets.find((a) => a.sys.id === assetLink.sys.id);
@@ -65,64 +64,67 @@ const koncerter = (data.value?.items ?? []).map((item) => {
     concertName: f.titel ?? "",
   };
 });
-console.log(koncerter)
+console.log(koncerter);
 
-// henter hero 
+// henter hero
 const { data: heroBillede } = await useFetch("/api/contentful", {
-  query: { contentType: "heroBillede", include: 1, "fields.billedtitel": "Koncerter hero" },
+  query: {
+    contentType: "heroBillede",
+    include: 1,
+    "fields.billedtitel": "Koncerter hero",
+  },
 });
 
-const screenWidth = ref(1920)
+const screenWidth = ref(1920);
 
 onMounted(() => {
-  screenWidth.value = window.innerWidth
-})
+  screenWidth.value = window.innerWidth;
+});
 
 const heroImgUrl = computed(() => {
-  const item = heroBillede.value?.items?.[0]
-  const assetId = item?.fields?.heroImg?.[0]?.sys?.id
-  const asset = heroBillede.value?.includes?.Asset?.find(a => a.sys.id === assetId)
-  if (!asset) return null
+  const item = heroBillede.value?.items?.[0];
+  const assetId = item?.fields?.heroImg?.[0]?.sys?.id;
+  const asset = heroBillede.value?.includes?.Asset?.find(
+    (a) => a.sys.id === assetId,
+  );
+  if (!asset) return null;
 
-  let width
+  let width;
   if (screenWidth.value < 992) {
-    width = 600
+    width = 600;
   } else if (screenWidth.value < 1510) {
-    width = 992
+    width = 992;
   } else {
-    width = 1920
+    width = 1920;
   }
 
-  return `https:${asset.fields.file.url}?w=${width}&q=80&fm=webp`
-})
+  return `https:${asset.fields.file.url}?w=${width}&q=80&fm=webp`;
+});
 const { data: glassBox } = await useFetch("/api/contentful", {
-  query: { contentType: "heroGlassBox", include: 1, "fields.titel": "Glass box koncerter" },
+  query: {
+    contentType: "heroGlassBox",
+    include: 1,
+    "fields.titel": "Glass box koncerter",
+  },
 });
 </script>
 
 <template>
-  <div class="hero full-bleed container container-md"
-  :style="heroImgUrl ? { backgroundImage: `url(${heroImgUrl})` } : {}">
-    <HeroGlassBox 
-    :heading="glassBox?.items?.[0]?.fields?.heading"
-    :hero-tagline="glassBox?.items?.[0]?.fields?.heroTagline"
-  />
-  </div>
-
-  <div class="container container--md mt-4 mb-3">
-    <h1>Koncerter</h1>
-    <p>
-      Her i Studenterhuset har vi mange forskellige genrer og vi fungerer som
-      vækstlag for upcoming artister, men vi ligger også hus til mere seasoned
-      kunstnere. Der er noget for en hver smag og vi har en bred vifte af genre
-      med artister fra hele verdenen.
-    </p>
+  <div
+    class="hero full-bleed container container-md"
+    :style="heroImgUrl ? { backgroundImage: `url(${heroImgUrl})` } : {}"
+  >
+    <HeroGlassBox
+      :heading="glassBox?.items?.[0]?.fields?.heading"
+      :hero-tagline="glassBox?.items?.[0]?.fields?.heroTagline"
+    />
   </div>
 
   <ConcertMenu :concert="koncerter" />
 
-  <div class="container container--md mt-5 mb-3">
-    <h2>Aldersgrænse til koncerter</h2>
+  <div class="container container--sm mt-5 mb-3">
+    <h2 class="section_sub_headline">Er du gammel nok?</h2>
+    <h2 class="section_headline">Aldersgrænse til koncerter</h2>
     <p>
       Alle er velkommen til Studenterhusets koncerter. Hvis man er under 15, så
       kræver det dog at man er i selskab med en voksen. Efter kl. 24.00 skal man
@@ -131,8 +133,9 @@ const { data: glassBox } = await useFetch("/api/contentful", {
     </p>
   </div>
 
-  <div class="container container--md mt-3 mb-5">
-    <h2>Undgå falske billetter</h2>
+  <div class="container container--sm mt-3 mb-5">
+    <h2 class="section_sub_headline">Husk altid at</h2>
+    <h2 class="section_headline">Undgå falske billetter</h2>
     <p>
       Vi har desværre set tilfælde af svindel med falske billetter, især til
       vores udsolgte arrangementer. For at undgå dette advarer Studenterhuset
@@ -143,9 +146,9 @@ const { data: glassBox } = await useFetch("/api/contentful", {
     </p>
   </div>
 
-  <div class="grid grid--2 mt-5 mb-5 container container--lg">
-    <div class="card card--active">
-      <h2>Bliv frivillig</h2>
+  <div class="grid grid--2 mt-5 mb-5 container container--md">
+    <div class="card_primary_background">
+      <h2 class="section_headline">Bliv frivillig</h2>
       <p>
         Studenterhuset er drevet af bl.a. frivillige, de spiller faktisk en stor
         rolle for os, for uden dem kunne vi ikke levere alle de fantastiske
@@ -154,33 +157,33 @@ const { data: glassBox } = await useFetch("/api/contentful", {
       </p>
       <div class="volunteer-image-wrap">
         <img src="../assets/images/Studenterhuset_frivillig.jpg" alt="" />
-        <NuxtLink class="glass cta card__cta" to="/volunteer">
+        <NuxtLink class="button_primary_color" to="/volunteer">
           Bliv Frivillig <FontAwesomeIcon :icon="faAngleRight" />
         </NuxtLink>
       </div>
     </div>
 
-    <div class="newsletter-section">
-      <h2>Nyhedsbrev</h2>
+    <div class="card_primary_background">
+      <h2 class="section_headline">Nyhedsbrev</h2>
       <p>
         Vil du holde dig opdateret på nyheder, koncerter og begivenheder, så
         tilmeld dig vores nyhedsbrev, så går du ikke glip af noget.
       </p>
       <div class="newsletter-fields">
+        <label>Navn:</label>
         <div class="newsletter-field">
-          <label>Navn:</label>
           <input type="text" placeholder="Dit navn" />
         </div>
+        <label>Efternavn:</label>
         <div class="newsletter-field">
-          <label>Efternavn:</label>
           <input type="text" placeholder="Dit efternavn" />
         </div>
+        <label>Email:</label>
         <div class="newsletter-field">
-          <label>Email:</label>
           <input type="email" placeholder="Din email" />
         </div>
       </div>
-      <button class="glass cta newsletter-btn">
+      <button class="button_primary_color">
         Tilmeld Nyhedsbrev <FontAwesomeIcon :icon="faAngleRight" />
       </button>
     </div>

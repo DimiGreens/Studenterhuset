@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from "vue";
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
-import FilterLogo from '../assets/images/Filter.svg?component';
+import FilterLogo from "../assets/images/Filter.svg?component";
 
 import {
   faAngleDown,
@@ -31,7 +31,7 @@ watch(
     await nextTick();
     calculateOverflow();
   },
-  { deep: true }
+  { deep: true },
 );
 
 const filterOpen = ref(false);
@@ -52,7 +52,7 @@ const maxPrice = ref(500);
 
 // Udregner placering og bredde af den udfyldte del af slideren
 const rangeFillStyle = computed(() => {
-  const span = (maxPrice.value - minPrice.value) || 1;
+  const span = maxPrice.value - minPrice.value || 1;
   const left = ((priceRange.value[0] - minPrice.value) / span) * 100;
   const right = ((priceRange.value[1] - minPrice.value) / span) * 100;
   return { left: `${left}%`, width: `${right - left}%` };
@@ -62,7 +62,6 @@ const availableGenres = computed(() => {
   const genres = props.concert.map((c) => c.genre).filter(Boolean);
   return [...new Set(genres)].sort();
 });
-
 
 function clampMin() {
   if (priceRange.value[0] > priceRange.value[1])
@@ -108,8 +107,8 @@ const filteredConcert = computed(() => {
     const q = searchQuery.value.toLowerCase();
     result = result.filter((item) =>
       [item.bandName, item.genre].some((field) =>
-        field?.toLowerCase().includes(q)
-      )
+        field?.toLowerCase().includes(q),
+      ),
     );
   }
 
@@ -179,16 +178,16 @@ onMounted(async () => {
         selectedDate.value = dateStr;
       },
       onDayCreate: (dObj, dStr, fp, dayElem) => {
-  const d = dayElem.dateObj;
-  const day = String(d.getDate()).padStart(2, "0");
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  const year = d.getFullYear();
-  const formatted = `${day}/${month}/${year}`;
+        const d = dayElem.dateObj;
+        const day = String(d.getDate()).padStart(2, "0");
+        const month = String(d.getMonth() + 1).padStart(2, "0");
+        const year = d.getFullYear();
+        const formatted = `${day}/${month}/${year}`;
 
-  if (concertDates.has(formatted)) {
-    dayElem.classList.add("has-event");
-  }
-},
+        if (concertDates.has(formatted)) {
+          dayElem.classList.add("has-event");
+        }
+      },
     });
 
     const route = useRoute();
@@ -286,21 +285,25 @@ console.log(selectedConcert.value);
 </script>
 
 <template>
-  <div class="concert-section container container--lg">
+  <div class="container container--md">
     <div class="filter_button_search_wrapper">
-    <button class="filter_toggle" @click="filterOpen = !filterOpen">
-      <span>Filter</span>
-      <FontAwesomeIcon class="filter_icon" v-if="filterOpen" :icon="faXmark" />
-<FilterLogo class="filter_icon" v-else />
-    </button>
+      <button class="filter_toggle" @click="filterOpen = !filterOpen">
+        <span>Filter</span>
+        <FontAwesomeIcon
+          class="filter_icon"
+          v-if="filterOpen"
+          :icon="faXmark"
+        />
+        <FilterLogo class="filter_icon" v-else />
+      </button>
 
-    <input
+      <input
         v-model="searchQuery"
         type="text"
         placeholder="Søg"
         class="filter_field search_input mobile_search"
       />
-</div>
+    </div>
     <div class="filter_panel" :class="{ open: filterOpen }">
       <div class="filter_panel_header">
         <p>Filter</p>
@@ -309,14 +312,14 @@ console.log(selectedConcert.value);
         </button>
       </div>
       <div class="select_wrapper">
-      <select v-model="selectedGenre" class="filter_select">
-        <option value="all">Alle genrer</option>
-        <option v-for="genre in availableGenres" :key="genre" :value="genre">
-          {{ genre }}
-        </option>
-      </select>
-<FontAwesomeIcon :icon="faChevronDown" class="select_chevron" />
-</div>
+        <select v-model="selectedGenre" class="filter_select">
+          <option value="all">Alle genrer</option>
+          <option v-for="genre in availableGenres" :key="genre" :value="genre">
+            {{ genre }}
+          </option>
+        </select>
+        <FontAwesomeIcon :icon="faChevronDown" class="select_chevron" />
+      </div>
       <input
         ref="dateInput"
         class="filter_field filter_select date_select"
@@ -326,8 +329,8 @@ console.log(selectedConcert.value);
 
       <div class="price_slider">
         <div class="price_label_wrapper">
-        <p class="price_label">{{ priceRange[0] }},-</p>
-        <p class="price_label">{{ priceRange[1] }},-</p>
+          <p class="price_label">{{ priceRange[0] }},-</p>
+          <p class="price_label">{{ priceRange[1] }},-</p>
         </div>
         <div class="range_track">
           <div class="range_base"></div>
@@ -356,12 +359,7 @@ console.log(selectedConcert.value);
         class="filter_field search_input desktop_search"
       />
 
-      <button
-        class="reset_button"
-        @click="resetFilters"
-      >
-        Nulstil filtre
-      </button>
+      <button class="reset_button" @click="resetFilters">Nulstil filtre</button>
     </div>
 
     <div class="card_wrapper">
@@ -388,17 +386,25 @@ console.log(selectedConcert.value);
         <div class="concert_info">
           <div
             class="band_cardName"
-            :ref="el => setTitleRef(el, item.id)"
+            :ref="(el) => setTitleRef(el, item.id)"
             :class="{ overflowing: overflowingTitles[item.id] }"
           >
-            <span :style="{ '--scroll-distance': `${scrollDistances[item.id] || 0}px` }">
+            <span
+              :style="{
+                '--scroll-distance': `${scrollDistances[item.id] || 0}px`,
+              }"
+            >
               {{ item.bandName }}
             </span>
           </div>
           <div class="band_dateAndPrice" v-show="openId !== item.id">
             <p class="band_cardDate">{{ item.date }}</p>
             <p class="band_cardPrice">
-              {{ item.price == 0 || item.price == null ? "Gratis" : item.price + ",-" }}
+              {{
+                item.price == 0 || item.price == null
+                  ? "Gratis"
+                  : item.price + ",-"
+              }}
             </p>
             <div class="band_noteTag">
               {{ item.note }}
@@ -457,7 +463,7 @@ console.log(selectedConcert.value);
             :src="toEmbedUrl(item.spotifyEmbed)"
             :class="[
               'media-embed',
-              `media-embed--${getEmbedType(item.spotifyEmbed)}`
+              `media-embed--${getEmbedType(item.spotifyEmbed)}`,
             ]"
             width="100%"
             height="180"
@@ -466,7 +472,12 @@ console.log(selectedConcert.value);
             allow="autoplay; clipboard-write; encrypted-media; fullscreen"
           />
           <div class="button_wrapper">
-            <a :href="item.ticketLink" target="_blank" class="glass ticket_button">Køb billet</a>
+            <a
+              :href="item.ticketLink"
+              target="_blank"
+              class="glass ticket_button"
+              >Køb billet</a
+            >
           </div>
         </div>
       </div>
@@ -501,18 +512,26 @@ console.log(selectedConcert.value);
                 <div class="band_detail">
                   <h2>{{ selectedConcert.bandName }}</h2>
                   <h3>{{ selectedConcert.concertName }}</h3>
-                  <p class="band_info_box" v-html="selectedConcert.bandDescription"></p>
+                  <p
+                    class="band_info_box"
+                    v-html="selectedConcert.bandDescription"
+                  ></p>
                   <iframe
                     v-if="selectedConcert.spotifyEmbed"
                     :src="toEmbedUrl(selectedConcert.spotifyEmbed)"
                     :class="[
                       'media-embed',
-                      `media-embed--${getEmbedType(selectedConcert.spotifyEmbed)}`
+                      `media-embed--${getEmbedType(selectedConcert.spotifyEmbed)}`,
                     ]"
                     width="100%"
                     frameborder="0"
                     loading="lazy"
-                    allow="autoplay; clipboard-write; encrypted-media; fullscreen"
+                    allow="
+                      autoplay;
+                      clipboard-write;
+                      encrypted-media;
+                      fullscreen;
+                    "
                   />
                 </div>
                 <div class="concert_info modal_info">
@@ -542,7 +561,12 @@ console.log(selectedConcert.value);
                     <p>{{ selectedConcert.note }}</p>
                   </div>
                   <div class="button_wrapper">
-                    <a :href="selectedConcert.ticketLink" target="_blank" class="glass ticket_button">Køb billet</a>
+                    <a
+                      :href="selectedConcert.ticketLink"
+                      target="_blank"
+                      class="glass ticket_button"
+                      >Køb billet</a
+                    >
                   </div>
                 </div>
               </div>
@@ -616,7 +640,6 @@ console.log(selectedConcert.value);
 </template>
 
 <style scoped>
-
 .desktop_search {
   display: none;
 }
@@ -705,7 +728,7 @@ console.log(selectedConcert.value);
   background: #eeeeff;
   position: relative;
 
-  .band_noteTag{
+  .band_noteTag {
     position: absolute;
     right: 15px;
     bottom: 30px;
@@ -717,19 +740,18 @@ console.log(selectedConcert.value);
     line-height: normal;
   }
 
-  
   .band_dateAndPrice {
     display: flex;
     justify-content: space-between;
     align-items: flex-end;
     margin-top: 15px;
-    
+
     .band_cardDate {
       font-family: "Barlow Condensed", sans-serif;
       color: #535353;
       font-size: 16px;
     }
-    
+
     .band_cardPrice {
       font-family: "Barlow Condensed", sans-serif;
       font-size: 20px;
@@ -740,26 +762,30 @@ console.log(selectedConcert.value);
 }
 
 .band_cardName {
-color: #0b1071;
-font-family: "Barlow Condensed", sans-serif;
-font-size: 32px;
-font-weight: bold;
-overflow: hidden;
-white-space: nowrap;
+  color: #0b1071;
+  font-family: "Barlow Condensed", sans-serif;
+  font-size: 32px;
+  font-weight: bold;
+  overflow: hidden;
+  white-space: nowrap;
 }
 
 .band_cardName span {
-display: inline-block;
-white-space: nowrap;
+  display: inline-block;
+  white-space: nowrap;
 }
 
 .concert:hover .band_cardName.overflowing span {
-animation: marquee 1s linear forwards;
+  animation: marquee 1s linear forwards;
 }
 
 @keyframes marquee {
-from { transform: translateX(0); }
-to   { transform: translateX(calc(var(--scroll-distance) * -1)); }
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(calc(var(--scroll-distance) * -1));
+  }
 }
 
 .concert_content {
@@ -800,7 +826,6 @@ to   { transform: translateX(calc(var(--scroll-distance) * -1)); }
   width: 100%;
   margin-bottom: 10px;
 
-
   p:first-child {
     font-size: 13px;
     font-weight: 700;
@@ -818,7 +843,7 @@ to   { transform: translateX(calc(var(--scroll-distance) * -1)); }
   }
 }
 
-.note{
+.note {
   grid-column: 1 / -1;
 }
 

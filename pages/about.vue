@@ -1,179 +1,98 @@
 <script setup>
-const myAccordion = [
-  {
-    id: 1,
-    accordionTitle: "Hvad er Studenterhuset?",
-    accordionContent:
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla faucibus ex viverra ullamcorper fermentum. In eget dapibus nunc, sed imperdiet lectus. Nulla eleifend diam ex, at dictum nibh bibendum non. Nulla id felis in justo vulputate luctus.",
-  },
-  {
-    id: 2,
-    accordionTitle: "Hvem kan komme?",
-    accordionContent:
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla faucibus ex viverra ullamcorper fermentum. In eget dapibus nunc, sed imperdiet lectus. Nulla eleifend diam ex, at dictum nibh bibendum non. Nulla id felis in justo vulputate luctus.",
-  },
-  {
-    id: 3,
-    accordionTitle: "Hvad sker der på Studenterhuset?",
-    accordionContent:
-      "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla faucibus ex viverra ullamcorper fermentum. In eget dapibus nunc, sed imperdiet lectus. Nulla eleifend diam ex, at dictum nibh bibendum non. Nulla id felis in justo vulputate luctus.",
-  },
-];
+import RoyalBeerLogo from "~/assets/images/Royal_Beer_Logo.svg?url";
+import AalborgKommuneLogo from "~/assets/images/Aalborg_Kommune_Logo.svg?url";
+import KunstFondenLogo from "~/assets/images/Kunstfonden_Logo.svg?url";
+import AAULogo from "~/assets/images/AAU_Logo.svg?url";
+import UcnLogo from "~/assets/images/UCN_Logo.svg?url";
 
 const mySponser = [
   {
     id: 1,
-    sponserName: "test1",
-    sponserImage: "https://picsum.photos/800/400?random=1",
-    sponserLink: "https://www.google.com/",
+    sponserName: "Royal Beer",
+    sponserImage: RoyalBeerLogo,
+    sponserLink: "https://royalunibrew.dk/",
   },
   {
     id: 2,
-    sponserName: "test2",
-    sponserImage: "https://picsum.photos/800/400?random=2",
-    sponserLink: "https://www.google.com/",
+    sponserName: "UCN",
+    sponserImage: UcnLogo,
+    sponserLink: "https://www.ucn.dk/",
   },
   {
     id: 3,
-    sponserName: "test3",
-    sponserImage: "https://picsum.photos/800/400?random=3",
-    sponserLink: "https://www.google.com/",
+    sponserName: "Aalborg Kommune",
+    sponserImage: AalborgKommuneLogo,
+    sponserLink: "https://www.aalborg.dk/",
   },
   {
     id: 4,
-    sponserName: "test4",
-    sponserImage: "https://picsum.photos/800/400?random=4",
-    sponserLink: "https://www.google.com/",
+    sponserName: "AAU",
+    sponserImage: AAULogo,
+    sponserLink: "https://www.aau.dk/",
   },
   {
     id: 5,
-    sponserName: "test5",
-    sponserImage: "https://picsum.photos/800/400?random=5",
-    sponserLink: "https://www.google.com/",
-  },
-];
-
-const myAdministration = [
-  {
-    name: "Kunstnerisk leder Mads Mulvad",
-    mail: "booking@studenterhuset.dk",
-  },
-  {
-    name: "Barchef, Søren Vegeberg",
-    mail: "sv@studenterhuset.dk",
-  },
-  {
-    name: "Pr/Marketing, Bastian Duusgaard",
-    mail: "bd@studenterhuset.dk",
-  },
-  {
-    name: "Produktion, Daniel Loke Lynge Thøgersen",
-    mail: "production@studenterhuset.dk",
-  },
-  {
-    name: "Booking, Mikkel Bøgholm Frederiksen",
-    mail: "mikkel@studenterhuset.dk",
-  },
-  {
-    name: "Frivilligkoordinator, Naja Ravn-Jensen",
-    mail: "naja@studenterhuset.dk",
-  },
-  {
-    name: "Lyd-tekniker, Frank Reinau",
-    mail: "fr@studenterhuset.dk",
-  },
-];
-
-const myContact = [
-  {
-    text: "Studenterhuset",
-    mail: "",
-    phone: "",
-  },
-  {
-    text: "Gammeltorv",
-    mail: "",
-    phone: "",
-  },
-  {
-    text: "9000 Aalborg",
-    mail: "",
-    phone: "",
-  },
-  {
-    text: "CVR: (DK)16736341",
-    mail: "",
-    phone: "",
-  },
-  {
-    text: "Telefon (man-fre: 10-14)",
-    mail: "",
-    phone: "+45 31 41 04 74",
-  },
-  {
-    text: "Kontoret (PR / administration / drift / billetter / generelle forespørgsler)",
-    mail: "kontoret@studenterhuset.dk",
-    phone: "",
-  },
-  {
-    text: "Bestyrelsen",
-    mail: "bestyrelsen@studenterhuset.dk",
-    phone: "",
-  },
-  {
-    text: "Booking",
-    mail: "booking@studenterhuset.dk",
-    phone: "",
-  },
-  {
-    text: "Lån og udlejning af lokaler",
-    mail: "lokale@studenterhuset.dk",
-    phone: "",
+    sponserName: "Kunstfonden",
+    sponserImage: KunstFondenLogo,
+    sponserLink: "https://www.kunst.dk/",
   },
 ];
 
 const { data: heroBillede } = await useFetch("/api/contentful", {
-  query: { contentType: "heroBillede", include: 1, "fields.billedtitel": "Om Studenterhuset Hero" },
+  query: {
+    contentType: "heroBillede",
+    include: 1,
+    "fields.billedtitel": "Om Studenterhuset Hero",
+  },
 });
 
-const screenWidth = ref(1920)
+const screenWidth = ref(1920);
 
 onMounted(() => {
-  screenWidth.value = window.innerWidth
-})
+  screenWidth.value = window.innerWidth;
+});
 
 const heroImgUrl = computed(() => {
-  const item = heroBillede.value?.items?.[0]
-  const assetId = item?.fields?.heroImg?.[0]?.sys?.id
-  const asset = heroBillede.value?.includes?.Asset?.find(a => a.sys.id === assetId)
-  if (!asset) return null
+  const item = heroBillede.value?.items?.[0];
+  const assetId = item?.fields?.heroImg?.[0]?.sys?.id;
+  const asset = heroBillede.value?.includes?.Asset?.find(
+    (a) => a.sys.id === assetId,
+  );
+  if (!asset) return null;
 
-  let width
+  let width;
   if (screenWidth.value < 992) {
-    width = 600
+    width = 600;
   } else if (screenWidth.value < 1510) {
-    width = 992
+    width = 992;
   } else {
-    width = 1920
+    width = 1920;
   }
 
-  return `https:${asset.fields.file.url}?w=${width}&q=80&fm=webp`
-})
+  return `https:${asset.fields.file.url}?w=${width}&q=80&fm=webp`;
+});
 
 const { data: glassBox } = await useFetch("/api/contentful", {
-  query: { contentType: "heroGlassBox", include: 1, "fields.titel": "Glass box om studenterhuset" },
+  query: {
+    contentType: "heroGlassBox",
+    include: 1,
+    "fields.titel": "Glass box om studenterhuset",
+  },
 });
 </script>
 <template>
-  <div class="hero full-bleed container container-md"
-  :style="heroImgUrl ? { backgroundImage: `url(${heroImgUrl})` } : {}">
-    <HeroGlassBox 
-    :heading="glassBox?.items?.[0]?.fields?.heading"
-    :hero-tagline="glassBox?.items?.[0]?.fields?.heroTagline"
-  />
+  <div
+    class="hero full-bleed container container-md"
+    :style="heroImgUrl ? { backgroundImage: `url(${heroImgUrl})` } : {}"
+  >
+    <HeroGlassBox
+      :heading="glassBox?.items?.[0]?.fields?.heading"
+      :hero-tagline="glassBox?.items?.[0]?.fields?.heroTagline"
+    />
   </div>
-  <div class="container container--md mt-5">
-    <h2>Om Studenterhuset</h2>
+  <div class="container container--sm mt-5">
+    <h2 class="section_sub_headline">Bag kulisserne</h2>
+    <h2 class="section_headline">Om Studenterhuset</h2>
     <p>
       Beliggende lige i hjertet af Aalborg finder du Studenterhuset.
       Studenterhuset er de studerendes, men også hele Aalborgs hus.
@@ -190,35 +109,39 @@ const { data: glassBox } = await useFetch("/api/contentful", {
       læsesal.
     </p>
   </div>
-  <div class="container container--md mt-5">
-    <h2 class="mb-2">FAQ</h2>
+  <div class="container container--sm mt-5">
+    <h2 class="section_sub_headline">Nogen spørgsmål?</h2>
+    <h2 class="mb-2 section_headline">FAQ</h2>
     <Accordion :accordion="myAccordion" />
   </div>
-  <div class="container container--md card card--active mt-5">
-    <h2>Bliv frivillig</h2>
-    <p>
-      Studenterhuset er drevet af bl.a. frivillige, de spiller faktisk en stor
-      rolle for os, for uden dem kunne vi ikke levere alle de fantastiske
-      oplevelser vi er kendt for. Bliv en del af et fedt fællesskab og læs mere
-      om hvad det vil sige at være frivillig på Studenterhuset.
-    </p>
-    <div class="cafe_image mt-2">
-      <img src="../assets/images/Studenterhuset_frivillig.jpg" alt="" />
-      <NuxtLink class="cta glass card__cta" to="/volunteer">
-        Bliv Frivillig <FontAwesomeIcon :icon="faAngleRight" />
-      </NuxtLink>
+  <div class="container container--md container_desktop_split mt-5 mb-5">
+    <img src="../assets/images/Studenterhuset_frivillig.jpg" alt="" />
+    <div class="split_container">
+      <h2 class="section_headline">Bliv frivillig</h2>
+      <p>
+        Studenterhuset er drevet af bl.a. frivillige, de spiller faktisk en stor
+        rolle for os, for uden dem kunne vi ikke levere alle de fantastiske
+        oplevelser vi er kendt for. Bliv en del af et fedt fællesskab og læs
+        mere om hvad det vil sige at være frivillig på Studenterhuset.
+      </p>
+      <div class="cafe_image mt-2">
+        <NuxtLink class="button_primary_color" to="/volunteer">
+          Bliv Frivillig <FontAwesomeIcon :icon="faAngleRight" />
+        </NuxtLink>
+      </div>
     </div>
   </div>
   <div class="grid grid--2 container container--md mt-5">
-    <div>
+    <div class="card_primary_background">
       <Contact :Contact="myContact" />
     </div>
-    <div>
+    <div class="card_primary_background">
       <Administration :Administration="myAdministration" />
     </div>
   </div>
   <div class="container container--md mt-5 mb-5">
-    <h2>Sponsorer</h2>
+    <h2 class="section_sub_headline">Tak til vores</h2>
+    <h2 class="section_headline">Sponsorer</h2>
     <p>
       Vi sætter stor pris på støtten fra vores samarbejdspartnere, som hjælper
       med at gøre Studenterhuset til det, det er. Herunder finder du dem, vi er

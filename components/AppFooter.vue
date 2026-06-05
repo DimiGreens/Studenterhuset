@@ -1,6 +1,8 @@
 <script setup>
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
+// Importerer brand-ikoner til Facebook og Instagram
 import { faFacebook, faInstagram } from "@fortawesome/free-brands-svg-icons";
+// Importerer SVG-logoet som en Vue-komponent så det kan styles med CSS (fx farve via "color")
 import Logo from "../assets/images/Studenterhuset_logo.svg?component";
 </script>
 

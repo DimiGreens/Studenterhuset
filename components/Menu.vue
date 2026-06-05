@@ -1,37 +1,46 @@
 <script setup>
+// Henter menukortet fra Contentful.
+// include: 3 sikrer at alle relaterede entries (sektioner og menupunkter) pakkes med
 const { data } = await useFetch("/api/contentful", {
   query: { contentType: "menu", include: 3 },
   fresh: true,
 });
 
+// Alle relaterede entries (sektioner og menupunkter) ligger under includes
 const allEntries = data.value.includes?.Entry ?? [];
 
+// Mapper menukortet ud fra det første menu-dokument i Contentful.
+// Strukturen er tre niveauer dyb: menu → sektioner → menupunkter
 const menu = data.value.items[0].fields.menuSektioner
   .map((sektionLink) => {
+    // Slår sektionen op i includes via dens id (fx "Øl", "Vin", "Kaffe")
     const sektion = allEntries.find((e) => e.sys.id === sektionLink.sys.id);
     if (!sektion) return null;
 
+    // Slår hvert enkelt menupunkt i sektionen op via dets id
     const resolvedItems = sektion.fields.menuGenstande
       .map((itemLink) => allEntries.find((e) => e.sys.id === itemLink.sys.id))
-      .filter(Boolean);
+      .filter(Boolean); // fjerner punkter der ikke kunne slås op
 
+    // Returnerer en flad struktur med sektionens titel og alle dens menupunkter
     return {
       titel: sektion.fields.titel,
       items: resolvedItems.map((item) => ({
         navn: item.fields.navn,
-        studiePris: item.fields.studiePris,
+        studiePris: item.fields.studiePris, // rabat-pris for studerende
         normalPris: item.fields.normalPris,
-        beskrivelse: item.fields.beskrivelse,
-        kategori: item.fields.kategori,
+        beskrivelse: item.fields.beskrivelse, // evt. kort beskrivelse af varen
+        kategori: item.fields.kategori, // bruges til at vise en label (fx "Alkoholfri")
       })),
     };
   })
-  .filter(Boolean);
+  .filter(Boolean); // fjerner sektioner der ikke kunne slås op
 </script>
 
 <template>
   <div class="menucard-wrapper">
-    <h2>Menukort</h2>
+    <p class="section_sub_headline">Smag på</p>
+    <h2 class="section_headline">Menukortet</h2>
     <div class="menu_grid">
       <OpeningHours
         :openingHours="openingHours"
@@ -92,6 +101,20 @@ const menu = data.value.items[0].fields.menuSektioner
   width: 500px;
 }
 
+.menu-openingHours :deep(.footer_heading) {
+  font-family: "Barlow Condensed", sans-serif;
+  font-size: 1.3rem;
+  font-weight: 600;
+  padding-bottom: 0.5rem;
+  margin-bottom: 0;
+}
+
+.menu-openingHours :deep(.hours_row),
+.menu-openingHours :deep(span) {
+  font-family: "Barlow Condensed", sans-serif;
+  font-size: 1.1rem;
+}
+
 .beskrivelse {
   display: block;
   font-size: 0.8rem;
@@ -107,6 +130,10 @@ const menu = data.value.items[0].fields.menuSektioner
 
   * {
     font-family: "Barlow Condensed", sans-serif;
+  }
+
+  p.section_sub_headline {
+    padding-left: 150px;
   }
 
   h2 {

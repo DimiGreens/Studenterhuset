@@ -16,6 +16,7 @@ import {
 import flatpickr from "flatpickr";
 import "flatpickr/dist/flatpickr.min.css";
 
+// Modtager listen af koncerter fra concerts.vue (forælderen)
 const props = defineProps({
   concert: {
     type: Array,
@@ -23,34 +24,58 @@ const props = defineProps({
   },
 });
 
+// Gør koncert-listen reaktiv via computed, så Vue opdaterer UI automatisk ved prop-ændringer
 const concerts = computed(() => props.concert);
 
+// Kontrollerer igen, om indholdet overstiger den tilgængelige plads, når nye data modtages fx fra Contentful. 
 watch(
   () => props.concert,
   async () => {
-    await nextTick();
+    await nextTick(); // venter til Vue har opdateret DOM'en
     calculateOverflow();
   },
   { deep: true },
 );
 
+// Styrer om filter-panelet er åbent (relevant på mobil)
 const filterOpen = ref(false);
+
+// Reference til dato-input-feltet så flatpickr-biblioteket kan binde sig til det
 const dateInput = ref(null);
+
+// Holder selve flatpickr-instansen, bruges til at kalde .clear() når filtrene nulstilles
 const datePicker = ref(null);
+
+// Den dato brugeren har valgt i datofilter (fx "15/03/2025")
 const selectedDate = ref(null);
+
+// Holder id'et på det kort der er "slået op" (udvidet) på mobil
 const openId = ref(null);
+
+// Gemmer DOM-referencer til de udvidede indholdsafsnit, så vi kan læse deres højde til animationen
 const contentRefs = ref({});
+
+// Den valgte genre i filteret, "all" viser alle genrer
 const selectedGenre = ref("all");
+
+// Den koncert der er åben i modal-vinduet på desktop
 const selectedConcert = ref(null);
+
+// Den koncert der vises i billedgalleri-slideren
 const sliderConcert = ref(null);
+
+// Det aktuelle billede-indeks i galleriet
 const sliderIndex = ref(0);
+
+// Søgeord fra søgefeltet
 const searchQuery = ref("");
 
+// Prisinterval for pris-slideren [min, max]
 const priceRange = ref([0, 500]);
 const minPrice = ref(0);
 const maxPrice = ref(500);
 
-// Udregner placering og bredde af den udfyldte del af slideren
+// Beregner placering og bredde af den udfyldte del af pris-slideren som inline CSS-værdier
 const rangeFillStyle = computed(() => {
   const span = maxPrice.value - minPrice.value || 1;
   const left = ((priceRange.value[0] - minPrice.value) / span) * 100;
@@ -58,20 +83,25 @@ const rangeFillStyle = computed(() => {
   return { left: `${left}%`, width: `${right - left}%` };
 });
 
+// Samler alle unikke genrer fra koncerterne og sorterer dem alfabetisk til genre-dropdown
 const availableGenres = computed(() => {
   const genres = props.concert.map((c) => c.genre).filter(Boolean);
   return [...new Set(genres)].sort();
 });
 
+// Forhindrer at min-prisen trækkes forbi max-prisen
 function clampMin() {
   if (priceRange.value[0] > priceRange.value[1])
     priceRange.value[0] = priceRange.value[1];
 }
+
+// Forhindrer at max-prisen trækkes under min-prisen
 function clampMax() {
   if (priceRange.value[1] < priceRange.value[0])
     priceRange.value[1] = priceRange.value[0];
 }
 
+// Åbner billedgalleriet, sætter det valgte start-indeks og sætter hovebilledet forrest i arrayet
 const openSlider = (item, startIndex = 0) => {
   sliderConcert.value = {
     ...item,
@@ -80,22 +110,29 @@ const openSlider = (item, startIndex = 0) => {
   sliderIndex.value = startIndex;
 };
 const closeSlider = () => (sliderConcert.value = null);
+
+// Bladrer til forrige billede i galleriet, wrapper rundt fra start til slut
 const prevSlide = () =>
   (sliderIndex.value =
     (sliderIndex.value - 1 + sliderConcert.value.bandImages.length) %
     sliderConcert.value.bandImages.length);
+
+// Bladrer til næste billede i galleriet, wrapper rundt fra slut til start
 const nextSlide = () =>
   (sliderIndex.value =
     (sliderIndex.value + 1) % sliderConcert.value.bandImages.length);
 
+// Toggler åbning/lukning af mobilkortets udvid-sektion, lukker det hvis det allerede er åbent
 const toggle = (id) => {
   openId.value = openId.value === id ? null : id;
 };
 
+// Filtrerer koncerterne baseret på alle aktive filtre og viser kun kommende
 const filteredConcert = computed(() => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
+  // Fjerner koncerter der allerede er overstået
   let result = concerts.value.filter((item) => {
     if (!item.date) return false;
     const [day, month, year] = item.date.split("/");
@@ -103,6 +140,7 @@ const filteredConcert = computed(() => {
     return concertDate >= today;
   });
 
+  // Filtrerer på søgeord i band-navn eller genre
   if (searchQuery.value.trim()) {
     const q = searchQuery.value.toLowerCase();
     result = result.filter((item) =>
@@ -112,14 +150,17 @@ const filteredConcert = computed(() => {
     );
   }
 
+  // Filtrerer på den valgte genre
   if (selectedGenre.value !== "all") {
     result = result.filter((item) => item.genre === selectedGenre.value);
   }
 
+  // Filtrerer på den valgte dato
   if (selectedDate.value) {
     result = result.filter((item) => item.date === selectedDate.value);
   }
 
+  // Filtrerer på prisinterval
   result = result.filter(
     (item) =>
       item.price >= priceRange.value[0] && item.price <= priceRange.value[1],
@@ -128,10 +169,16 @@ const filteredConcert = computed(() => {
   return result;
 });
 
+// Gemmer DOM-referencer til titel-elementerne for hvert kort
 const titleRefs = ref({});
+
+// Holder styr på hvilke titler der er for lange til kortet og skal vise marquee-animation (når der ikke er plads til headeren) 
 const overflowingTitles = ref({});
+
+// Gemmer antal pixels teksten skal flytte sig ved marquee-animation per kort
 const scrollDistances = ref({});
 
+// Sætter DOM-reference og beregner om titlen løber ud over kanten første gang kortet renderes
 const setTitleRef = (el, id) => {
   if (!el) return;
   titleRefs.value[id] = el;
@@ -142,6 +189,7 @@ const setTitleRef = (el, id) => {
   scrollDistances.value[id] = distance;
 };
 
+// Genberegner overflow-status for alle titler, bruges ved resize og prop-opdateringer
 const calculateOverflow = () => {
   Object.entries(titleRefs.value).forEach(([id, el]) => {
     const span = el.querySelector("span");
@@ -161,6 +209,7 @@ onMounted(async () => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
+    // Samler datoerne for alle kommende koncerter i et Set til hurtig opslag i onDayCreate
     const concertDates = new Set(
       props.concert
         .filter((c) => {
@@ -171,12 +220,15 @@ onMounted(async () => {
         .map((c) => c.date),
     );
 
+    // Initialiserer flatpickr datovelgeren
     datePicker.value = flatpickr(dateInput.value, {
       dateFormat: "d/m/Y",
       disableMobile: true,
+      // Opdaterer selectedDate-filteret når brugeren vælger en dato
       onChange: (selectedDates, dateStr) => {
         selectedDate.value = dateStr;
       },
+      // Tilføjer CSS-klassen "has-event" på dage med en koncert, så de kan styles med en prik
       onDayCreate: (dObj, dStr, fp, dayElem) => {
         const d = dayElem.dateObj;
         const day = String(d.getDate()).padStart(2, "0");
@@ -190,6 +242,7 @@ onMounted(async () => {
       },
     });
 
+    // Tjekker om URL'en indeholder ?open=id, åbner den pågældende koncert i modal direkte
     const route = useRoute();
     if (route.query.open) {
       const match = concerts.value.find((c) => c.id === route.query.open);
@@ -197,6 +250,7 @@ onMounted(async () => {
     }
   }
 
+  // Sætter pris-sliderens min/max ud fra de faktiske priser i data
   const prices = props.concert.map((c) => c.price).filter((p) => p != null);
   if (prices.length) {
     minPrice.value = Math.min(...prices);
@@ -205,51 +259,48 @@ onMounted(async () => {
   }
 });
 
+// Afgør om embed-URL'en er fra Spotify eller YouTube, bruges til CSS-klasser og iframe-dimensioner
 function getEmbedType(url) {
   if (!url) return null;
-
-  if (url.includes("open.spotify.com")) {
-    return "spotify";
-  }
-
-  if (url.includes("youtube.com") || url.includes("youtu.be")) {
-    return "youtube";
-  }
-
-  console.log(getEmbedType);
-
+  if (url.includes("open.spotify.com")) return "spotify";
+  if (url.includes("youtube.com") || url.includes("youtu.be")) return "youtube";
   return null;
 }
 
+// Rydder op: fjerner resize-lytteren og genetablerer scroll på body når komponenten fjernes
 onUnmounted(() => {
   window.removeEventListener("resize", calculateOverflow);
   document.body.style.overflow = "";
 });
 
+// Åbner modal-vinduet med den valgte koncert og låser baggrunds-scroll
 const openModal = (item) => {
   selectedConcert.value = item;
   document.body.style.overflow = "hidden";
 };
+
+// Lukker modal-vinduet og genetablerer scroll på body
 const closeModal = () => {
   selectedConcert.value = null;
   document.body.style.overflow = "";
 };
 
+// Finder andre kommende koncerter inden for samme genre til sidebar'en i modalen
 const otherConcerts = computed(() => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
   return concerts.value.filter((item) => {
-    if (item.id === selectedConcert.value?.id) return false;
-    if (item.genre !== selectedConcert.value?.genre) return false;
+    if (item.id === selectedConcert.value?.id) return false; // springer den åbne koncert over
+    if (item.genre !== selectedConcert.value?.genre) return false; // kun samme genre
     if (!item.date) return false;
-
     const [day, month, year] = item.date.split("/");
     const concertDate = new Date(year, month - 1, day);
     return concertDate >= today;
   });
 });
 
+// Nulstiller alle filtre til standardværdier og rydder dato-velgeren
 const resetFilters = () => {
   selectedGenre.value = "all";
   selectedDate.value = null;
@@ -258,15 +309,17 @@ const resetFilters = () => {
   searchQuery.value = "";
 };
 
+// Omformer en Spotify- eller YouTube-URL til den korrekte embed-URL til brug i en iframe
 function toEmbedUrl(url) {
   if (!url) return null;
 
-  // Spotify
+  // Spotify: indsætter "embed/" i URL-stien
   if (url.includes("open.spotify.com")) {
     return url.replace("open.spotify.com/", "open.spotify.com/embed/");
   }
 
-  // YouTube – håndterer både youtu.be/ID og youtube.com/watch?v=ID
+  // YouTube: udtrækker video-id'et og bygger en youtube.com/embed-URL
+  // Håndterer både youtube.com/watch?v=ID og youtu.be/ID
   if (url.includes("youtube.com") || url.includes("youtu.be")) {
     const match = url.match(/(?:v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
     if (match) return `https://www.youtube.com/embed/${match[1]}`;
@@ -275,13 +328,14 @@ function toEmbedUrl(url) {
   return null;
 }
 
+// Åbner modal kun på desktop (>= 993px), på mobil bruges accordion-udvidet kort i stedet
 function handleClick(item) {
   if (window.innerWidth >= 993) {
     openModal(item);
   }
 }
 
-console.log(selectedConcert.value);
+
 </script>
 
 <template>
@@ -475,7 +529,7 @@ console.log(selectedConcert.value);
             <a
               :href="item.ticketLink"
               target="_blank"
-              class="glass ticket_button"
+              class="button_primary_color"
               >Køb billet</a
             >
           </div>
@@ -493,11 +547,11 @@ console.log(selectedConcert.value);
           <div class="modal_container">
             <div class="modal">
               <div class="image_wrapper">
-                <button class="modal_close glass" @click="closeModal">
+                <button class="modal_close button_primary_color" @click="closeModal">
                   <FontAwesomeIcon :icon="faXmark" />
                 </button>
                 <button
-                  class="modal_band-gallery glass"
+                  class="modal_band-gallery button_primary_color"
                   @click.stop="openSlider(selectedConcert, 0)"
                 >
                   <FontAwesomeIcon :icon="faExpand" />
@@ -564,7 +618,7 @@ console.log(selectedConcert.value);
                     <a
                       :href="selectedConcert.ticketLink"
                       target="_blank"
-                      class="glass ticket_button"
+                      class="button_primary_color"
                       >Køb billet</a
                     >
                   </div>
@@ -611,7 +665,7 @@ console.log(selectedConcert.value);
           @click.self="closeSlider"
         >
           <div class="slider_container">
-            <button class="modal_close glass" @click="closeSlider">
+            <button class="modal_close button_primary_color" @click="closeSlider">
               <FontAwesomeIcon :icon="faXmark" />
             </button>
             <button class="slider_arrow left glass" @click="prevSlide">
@@ -856,19 +910,6 @@ console.log(selectedConcert.value);
   white-space: pre-line;
 }
 
-.ticket_button {
-  background: #5774b8;
-  color: white;
-  font-size: 18px;
-  padding: 12px 24px;
-  border-radius: 100px;
-  border: none;
-  cursor: pointer;
-  font-family: "Barlow Condensed", sans-serif;
-  margin-top: 8px;
-  margin-bottom: 16px;
-  text-decoration: none;
-}
 
 .button_wrapper {
   display: flex;
@@ -1271,10 +1312,10 @@ select.filter_select {
   right: 15px;
   width: 40px;
   height: 40px;
-  color: white;
-  font-size: 18px;
-  cursor: pointer;
   z-index: 10;
+  padding: 0;
+  justify-content: center;
+  cursor: pointer;
 }
 
 .opened_modal_bandbox {
@@ -1323,10 +1364,9 @@ select.filter_select {
   right: 15px;
   width: 40px;
   height: 40px;
-  color: white;
-  font-size: 18px;
-  cursor: pointer;
   z-index: 10;
+  padding: 0;
+  justify-content: center;
 }
 
 .slider_container {

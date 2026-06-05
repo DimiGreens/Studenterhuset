@@ -90,8 +90,10 @@ h6 {
     font-family: "Barlow Condensed", sans-serif;
 }
 
-p {
+p,
+li {
     font-family: "Inter", sans-serif;
+    font-size: 20px;
 }
 
 /* =========================
@@ -195,11 +197,15 @@ CARD BACKGROUNDS
     background-color: #EEEEFF;
     padding: 15px;
     border-radius: 25px;
-    
+
+    @media screen and (min-width: 993px) {
+        padding: 50px 75px;
+    }
+
     img {
         border-radius: 25px;
     }
-    
+
     label {
         font-family: "Inter", sans-serif;
     }

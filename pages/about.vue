@@ -5,6 +5,7 @@ import KunstFondenLogo from "~/assets/images/Kunstfonden_Logo.svg?url";
 import AAULogo from "~/assets/images/AAU_Logo.svg?url";
 import UcnLogo from "~/assets/images/UCN_Logo.svg?url";
 
+// Sponsor-listen med logo-billeder importeret som URL-strenge (SVG-filer)
 const mySponser = [
   {
     id: 1,
@@ -38,6 +39,7 @@ const mySponser = [
   },
 ];
 
+// Henter hero-billedet til Om-siden
 const { data: heroBillede } = await useFetch("/api/contentful", {
   query: {
     contentType: "heroBillede",
@@ -46,12 +48,14 @@ const { data: heroBillede } = await useFetch("/api/contentful", {
   },
 });
 
-const screenWidth = ref(1920);
+// Starter som null, sættes til den faktiske skærmbredde i browseren (undgår hydration-mismatch)
+const screenWidth = ref(null);
 
 onMounted(() => {
   screenWidth.value = window.innerWidth;
 });
 
+// Beregner den korrekte billed-URL ud fra skærmbredden, sender et mindre billede til mobil
 const heroImgUrl = computed(() => {
   const item = heroBillede.value?.items?.[0];
   const assetId = item?.fields?.heroImg?.[0]?.sys?.id;
@@ -60,18 +64,20 @@ const heroImgUrl = computed(() => {
   );
   if (!asset) return null;
 
+  const w = screenWidth.value;
   let width;
-  if (screenWidth.value < 992) {
-    width = 600;
-  } else if (screenWidth.value < 1510) {
-    width = 992;
-  } else {
+  if (w === null || w >= 1510) {
     width = 1920;
+  } else if (w < 992) {
+    width = 600;
+  } else {
+    width = 992;
   }
 
   return `https:${asset.fields.file.url}?w=${width}&q=80&fm=webp`;
 });
 
+// Henter tekst-indholdet til glasbox-boksen oven på hero-billedet
 const { data: glassBox } = await useFetch("/api/contentful", {
   query: {
     contentType: "heroGlassBox",
@@ -91,7 +97,7 @@ const { data: glassBox } = await useFetch("/api/contentful", {
     />
   </div>
   <div class="container container--sm mt-5">
-    <h2 class="section_sub_headline">Bag kulisserne</h2>
+    <p class="section_sub_headline">Bag kulisserne</p>
     <h2 class="section_headline">Om Studenterhuset</h2>
     <p>
       Beliggende lige i hjertet af Aalborg finder du Studenterhuset.
@@ -110,7 +116,7 @@ const { data: glassBox } = await useFetch("/api/contentful", {
     </p>
   </div>
   <div class="container container--sm mt-5">
-    <h2 class="section_sub_headline">Nogen spørgsmål?</h2>
+    <p class="section_sub_headline">Nogen spørgsmål?</p>
     <h2 class="mb-2 section_headline">FAQ</h2>
     <Accordion :accordion="myAccordion" />
   </div>
@@ -140,7 +146,7 @@ const { data: glassBox } = await useFetch("/api/contentful", {
     </div>
   </div>
   <div class="container container--md mt-5 mb-5">
-    <h2 class="section_sub_headline">Tak til vores</h2>
+    <p class="section_sub_headline">Tak til vores</p>
     <h2 class="section_headline">Sponsorer</h2>
     <p>
       Vi sætter stor pris på støtten fra vores samarbejdspartnere, som hjælper

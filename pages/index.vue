@@ -6,6 +6,7 @@ import "swiper/css/pagination";
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 import { faAngleRight } from "@fortawesome/free-solid-svg-icons";
 
+// Henter hero-billedet til forsiden fra Contentful
 const { data: heroBillede } = await useFetch("/api/contentful", {
   query: {
     contentType: "heroBillede",
@@ -14,12 +15,17 @@ const { data: heroBillede } = await useFetch("/api/contentful", {
   },
 });
 
+// Starter som null, sættes til den faktiske skærmbredde første gang siden loader i browseren.
+// null bruges som udgangspunkt så server og browser ikke producerer forskelligt HTML og skaber en hydration-fejl.
 const screenWidth = ref(null);
 
 onMounted(() => {
   screenWidth.value = window.innerWidth;
 });
 
+// Beregner den korrekte billed-URL baseret på skærmbredden.
+// Vælger en mindre billedstørrelse på mobil for at spare båndbredde.
+// Bruger 1920 som fallback hvis skærmbredden endnu ikke er målt (server-side render).
 const heroImgUrl = computed(() => {
   const item = heroBillede.value?.items?.[0];
   const assetId = item?.fields?.heroImg?.[0]?.sys?.id;
@@ -43,6 +49,7 @@ const heroImgUrl = computed(() => {
   return `https:${asset.fields.file.url}?w=${width}&q=100&fm=webp`;
 });
 
+// Henter tekst-indholdet til glasbox-boksen der sidder oven på hero-billedet
 const { data: glassBox } = await useFetch("/api/contentful", {
   query: {
     contentType: "heroGlassBox",
@@ -51,35 +58,44 @@ const { data: glassBox } = await useFetch("/api/contentful", {
   },
 });
 
+// Henter alle koncerter fra Contentful.
+// include: 3 betyder at Contentful også pakker relaterede entries med (fx kunstner-data) 3 niveauer dybt
 const { data: koncertData } = await useFetch("/api/contentful", {
   query: { contentType: "koncerter", include: 3 },
   fresh: true,
 });
 
+// Contentful returnerer relaterede entries (fx kunstner) og assets (fx billeder) separat under "includes"
 const allConcertEntries = koncertData.value?.includes?.Entry ?? [];
 const allConcertAssets = koncertData.value?.includes?.Asset ?? [];
 
+// Slår et asset-link op i includes-listen og returnerer den fulde billed-URL
 const resolveConcertAsset = (assetLink) => {
   if (!assetLink?.sys?.id) return null;
   const asset = allConcertAssets.find((a) => a.sys.id === assetLink.sys.id);
   return asset ? "https:" + asset.fields.file.url : null;
 };
 
+// Slår en kunstner-reference op i includes-listen og returnerer et objekt med artistens navn
 const resolveArtist = (artistLink) => {
   if (!artistLink?.sys?.id) return null;
   const artist = allConcertEntries.find((e) => e.sys.id === artistLink.sys.id);
   return artist ? { navn: artist.fields.navn } : null;
 };
 
+// Formaterer et ISO-tidsstempel (fx "2025-03-15T20:00") til dansk datoformat (fx "15/03/2025")
 const formatDate = (iso) => {
   if (!iso) return "";
   const d = new Date(iso);
   return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
 };
 
+// Opretter en "i dag"-dato uden klokkeslæt, så vi kan sammenligne datoer korrekt
 const today = new Date();
 today.setHours(0, 0, 0, 0);
 
+// Mapper alle koncerter til en flad datastruktur, filtrerer tidligere ud,
+// sorterer efter dato og tager de 3 nærmeste til forsiden
 const kommendKoncerter = (koncertData.value?.items ?? [])
   .map((item) => {
     const f = item.fields;
@@ -87,37 +103,42 @@ const kommendKoncerter = (koncertData.value?.items ?? [])
     const dateStr = formatDate(f.datoOgKoncertStart);
     return {
       id: item.sys.id,
-      bandName: hovedact?.navn ?? f.titel,
+      bandName: hovedact?.navn ?? f.titel, // bruger kunstnerens navn, ellers falder den tilbage på koncert-titlen
       bandImage: resolveConcertAsset(f.koncertBillede),
       genre: Array.isArray(f.genre) ? f.genre[0] : f.genre,
       date: dateStr,
       price: f.pris ?? 0,
-      _dateObj: f.datoOgKoncertStart ? new Date(f.datoOgKoncertStart) : null,
+      _dateObj: f.datoOgKoncertStart ? new Date(f.datoOgKoncertStart) : null, // hjælpe-felt til sortering, vises ikke
     };
   })
-  .filter((k) => k._dateObj && k._dateObj >= today)
-  .sort((a, b) => a._dateObj - b._dateObj)
-  .slice(0, 3);
+  .filter((k) => k._dateObj && k._dateObj >= today) // kun kommende koncerter
+  .sort((a, b) => a._dateObj - b._dateObj) // sortér så den næste dato kommer først
+  .slice(0, 3); // kun de 3 nærmeste
 
+// Henter alle begivenheder fra Contentful
 const { data: eventData } = await useFetch("/api/contentful", {
   query: { contentType: "begivenheder", include: 3 },
   fresh: true,
 });
 
+// Assets til begivenheder (billeder) ligger i includes, ikke direkte på item-felterne
 const allEventAssets = eventData.value?.includes?.Asset ?? [];
 
+// Slår et billed-link op for begivenheder og returnerer den fulde URL
 const resolveEventAsset = (assetLink) => {
   if (!assetLink?.sys?.id) return null;
   const asset = allEventAssets.find((a) => a.sys.id === assetLink.sys.id);
   return asset ? "https:" + asset.fields.file.url : null;
 };
 
+// Formaterer dato til dansk format, identisk med formatDate ovenfor
 const formatEventDate = (iso) => {
   if (!iso) return "";
   const d = new Date(iso);
   return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
 };
 
+// Samme logik som koncerter: mapper, filtrerer fortidige fra, sorterer og tager de 3 nærmeste begivenheder
 const kommendBegivenheder = (eventData.value?.items ?? [])
   .map((item) => {
     const f = item.fields;
@@ -125,7 +146,7 @@ const kommendBegivenheder = (eventData.value?.items ?? [])
       id: item.sys.id,
       titel: f.titel ?? "",
       billede: Array.isArray(f.billeder)
-        ? resolveEventAsset(f.billeder[0])
+        ? resolveEventAsset(f.billeder[0]) // tager kun det første billede som preview-billede
         : null,
       dato: formatEventDate(f.dato),
       pris: f.pris ?? null,
@@ -136,6 +157,9 @@ const kommendBegivenheder = (eventData.value?.items ?? [])
   .sort((a, b) => a._dateObj - b._dateObj)
   .slice(0, 3);
 
+// Navigerer til begivenhedssiden.
+// På desktop åbner den specifikke begivenhed direkte via URL-parameter (?open=id).
+// På mobil sendes brugeren bare til listen, da modal-vinduet ikke bruges på mobil.
 function goToEvent(id) {
   if (window.innerWidth >= 993) {
     navigateTo(`/events?open=${id}`);
@@ -144,6 +168,7 @@ function goToEvent(id) {
   }
 }
 
+// Samme logik som goToEvent, men for koncerter
 function goToConcert(id) {
   if (window.innerWidth >= 993) {
     navigateTo(`/concerts?open=${id}`);
